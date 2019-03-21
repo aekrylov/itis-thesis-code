@@ -10,7 +10,6 @@ from scrapy import FormRequest
 class CaseSpiderSpider(scrapy.Spider):
     name = 'case_spider'
     allowed_domains = ['kad.arbitr.ru']
-    start_urls = ['http://kad.arbitr.ru/']
 
     def start_requests(self):
         def form_data(p):
@@ -31,14 +30,14 @@ class CaseSpiderSpider(scrapy.Spider):
             'Content-Type': 'application/json'
         }
 
-        for i in range(1, 5):
-            yield FormRequest('http://kad.arbitr.ru/Kad/SearchInstances',
+        for i in range(41, 401):
+            yield FormRequest('http://kad.arbitr.ru/Kad/SearchInstances', method='POST',
                               headers=headers, body=form_data(i), callback=self.parse)
 
     def parse(self, response):
         for row in response.xpath('//tr'):
-            url = row.xpath('//a[@class="num_case"]/@href').get()
-            case_num = row.xpath('//a[@class="num_case"]/text()').get().strip()
+            url = row.xpath('.//a[@class="num_case"]/@href').get()
+            case_num = row.xpath('.//a[@class="num_case"]/text()').get().strip()
             case_id = re.search(r'/([a-z0-9\-]+)$', url).group(1)
 
             meta = {
@@ -61,7 +60,12 @@ class CaseSpiderSpider(scrapy.Spider):
     def parse_case_json(self, response):
         obj = json.loads(response.body)
         # TODO multiple documents
-        doc = obj['Result'][0]['FinalDocuments'][0]
+        try:
+            doc = obj['Result'][0]['FinalDocuments'][0]
+        except IndexError:
+            return
+        except KeyError:
+            return
 
         result = {
             'case_id': response.meta['case_id'],
