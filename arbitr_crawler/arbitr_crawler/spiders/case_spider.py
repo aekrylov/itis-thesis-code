@@ -1,11 +1,10 @@
 # -*- coding: utf-8 -*-
 import json
-import logging
 import re
 import time
 
 import scrapy
-from scrapy import FormRequest, Request
+from scrapy import FormRequest
 
 
 class CaseSpiderSpider(scrapy.Spider):
@@ -41,34 +40,23 @@ class CaseSpiderSpider(scrapy.Spider):
             url = row.xpath('//a[@class="num_case"]/@href').get()
             case_num = row.xpath('//a[@class="num_case"]/text()').get().strip()
             case_id = re.search(r'/([a-z0-9\-]+)$', url).group(1)
+
             meta = {
                 'case_num': case_num,
                 'case_id': case_id
             }
-
             headers = {
                 'Referer': 'http://kad.arbitr.ru/Card/%s' % case_id,
                 'X-Requested-With': 'XMLHttpRequest',
                 'Content-Type': 'application/json'
             }
-
-            yield FormRequest('http://kad.arbitr.ru/Case/Finalacts', meta=meta, headers=headers,
-                              method='GET', formdata={'_': str(int(time.time())), 'id': case_id}, callback=self.parse_case_json)
-            # yield Request(url, callback=self.parse_case)
-
-    def parse_case(self, response):
-        case_num = response.xpath('//title/text()').get().strip()
-
-        logging.info(response.xpath('//div[@id="gr_case_acts"]').get())
-        # TODO run JS and click on the tab
-        for doc_row in response.xpath('//div[@id="gr_case_acts"]//tbody//tr'):
-            logging.info(doc_row.xpath('//a/text()').get().strip())
-            yield {
-                'case_num': case_num,
-                'case_url': response.url,
-                'doc_name': doc_row.xpath('//a/text()').get().strip(),
-                'doc_url': doc_row.xpath('//a/@href').get()
+            form_data = {
+                '_': str(int(time.time())),
+                'id': case_id
             }
+
+            yield FormRequest('http://kad.arbitr.ru/Case/Finalacts', meta=meta, headers=headers, formdata=form_data,
+                              method='GET', callback=self.parse_case_json)
 
     def parse_case_json(self, response):
         obj = json.loads(response.body)
