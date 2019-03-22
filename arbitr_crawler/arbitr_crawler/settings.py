@@ -53,7 +53,7 @@ SPIDER_MIDDLEWARES = {
 # Enable or disable downloader middlewares
 # See https://doc.scrapy.org/en/latest/topics/downloader-middleware.html
 DOWNLOADER_MIDDLEWARES = {
-    'scrapy_crawlera.CrawleraMiddleware': 300,
+    'scrapy_luminati.LuminatiMiddleware': 300,
     # 'scrapy_splash.SplashCookiesMiddleware': 723,
     # 'scrapy_splash.SplashMiddleware': 725,
     # 'scrapy.downloadermiddlewares.httpcompression.HttpCompressionMiddleware': 810,
@@ -101,3 +101,5 @@ FEED_FORMAT = 'jsonlines'
 # DUPEFILTER_DEBUG = True
 
 CRAWLERA_ENABLED = False
+
+LUMINATI_ENABLED = True
