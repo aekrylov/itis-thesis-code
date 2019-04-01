@@ -95,8 +95,10 @@ DOWNLOADER_MIDDLEWARES = {
 SPLASH_URL = 'http://localhost:8050'
 DUPEFILTER_CLASS = 'scrapy_splash.SplashAwareDupeFilter'
 
-FEED_URI = 'file:///home/anth/prog/itis-thesis/code/out/docs.json'
+FEED_URI = 'file:///home/anth/prog/itis-thesis/code/out/docs_simple2.json'
 FEED_FORMAT = 'jsonlines'
+
+LOG_LEVEL = 'INFO'
 
 # DUPEFILTER_DEBUG = True
 
