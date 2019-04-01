@@ -1,11 +1,7 @@
-import os
+import re
 
 from sklearn.feature_extraction.text import CountVectorizer, TfidfTransformer
 from sklearn.pipeline import Pipeline
-from tika import parser, unpack
-
-import re
-
 
 codex_regexes = {
     re.compile(r'арбитражн[а-я]*[\s\-]+процессуальн[а-я]*\s+кодекс[а-я]*', re.IGNORECASE | re.MULTILINE): 'АПК',
@@ -15,7 +11,7 @@ codex_regexes = {
     re.compile(r'кодекс[а-я]*\s+(об\s+)?административн[а-я]*\s+правонарушени[а-я]*', re.IGNORECASE | re.MULTILINE): 'КоАП',
 }
 
-CAP_SPACES = re.compile(r'(([А-Я] ){2,}[А-Я])')
+CAP_SPACES = re.compile(r'(([А-Я] +){2,}[А-Я])')
 
 
 def fix_cap_spaces(text: str):
@@ -36,22 +32,24 @@ def remove_numbers(text: str):
     return text
 
 
-def parse(path):
-    try:
-        parsed = unpack.from_file(path)  # unpack is faster in this case
-    except Exception as e:
-        print('Exception while reading %s: %s' % (path, e))
-        return None
+def cut_parts(text: str) -> str:
+    no_head = re.sub(r'^.*\n\s*установил:\s*\n', '', text, 1, re.MULTILINE | re.IGNORECASE | re.DOTALL)
+    no_resolution = re.sub(r'\n\s*решил:\s*\n.*$', '', no_head, 1, re.MULTILINE | re.IGNORECASE | re.DOTALL)
+    return no_resolution
+
+
+def preprocess(text: str) -> str:
+    text = text.strip()
+    text = fix_cap_spaces(text)
+    text = cut_parts(text)
 
     for regex, repl in codex_regexes.items():
-        parsed['content'] = regex.sub(repl, parsed['content'])  # TODO optimize
-    parsed['content'] = fix_cap_spaces(parsed['content'])
-    parsed['content'] = remove_newlines(parsed['content'])
-    parsed['content'] = remove_numbers(parsed['content'])
-    return parsed['content'].strip()
+        text = regex.sub(repl, text)  # TODO optimize
 
+    text = remove_newlines(text)
+    text = remove_numbers(text)
+    return text
 
-texts = [parse('../out/docs/' + path) for path in os.listdir('../out/docs')]
 
 pipeline = Pipeline([
     ('count', CountVectorizer()),
