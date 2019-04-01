@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+import datetime
 import json
 import re
 import time
@@ -12,14 +13,14 @@ class CaseSpiderSpider(scrapy.Spider):
     allowed_domains = ['kad.arbitr.ru']
 
     def start_requests(self):
-        def form_data(p):
+        def form_data(p, start, end):
             return json.dumps({
                 'Page': p,
                 'Count': 25,
                 'CaseType': 'G',
                 'Courts': [],
-                'DateFrom': "2018-01-01T00:00:00",
-                'DateTo': "2018-12-31T00:00:00",
+                "DateFrom": start.strftime("%Y-%m-%dT%H:%M:%S"),
+                "DateTo": end.strftime("%Y-%m-%dT%H:%M:%S"),
                 'WithVKSInstances': False
             })
 
@@ -30,9 +31,20 @@ class CaseSpiderSpider(scrapy.Spider):
             'Content-Type': 'application/json'
         }
 
-        for i in range(41, 401):
-            yield FormRequest('http://kad.arbitr.ru/Kad/SearchInstances', method='POST',
-                              headers=headers, body=form_data(i), callback=self.parse)
+        chunks = 365
+
+        start_date = datetime.datetime(2017, 1, 1)
+        end_date = datetime.datetime(2018, 31, 12)
+
+        delta = (end_date - start_date) / chunks
+
+        for chunk in range(0, chunks):
+            start = start_date + delta*chunk
+            end = start + delta
+
+            for i in range(1, 2):
+                yield FormRequest('http://kad.arbitr.ru/Kad/SearchInstances', method='POST',
+                                  headers=headers, body=form_data(i, start, end), callback=self.parse)
 
     def parse(self, response):
         for row in response.xpath('//tr'):
