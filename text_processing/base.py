@@ -11,14 +11,11 @@ codex_regexes = {
     re.compile(r'кодекс[а-я]*\s+(об\s+)?административн[а-я]*\s+правонарушени[а-я]*', re.IGNORECASE | re.MULTILINE): 'КоАП',
 }
 
-CAP_SPACES = re.compile(r'(([А-Я] +){2,}[А-Я])')
+CAP_SPACES = re.compile(r'((?:[А-Я] +){2,}[А-Я])', re.IGNORECASE)
 
 
 def fix_cap_spaces(text: str):
-    for m in CAP_SPACES.finditer(text):
-        group = m.group(1)
-        text = text.replace(group, group.replace(' ', ''), 1)
-    return text
+    return CAP_SPACES.sub(lambda m: m.group(1).replace(' ', ''), text)
 
 
 def remove_newlines(text: str):
@@ -27,14 +24,18 @@ def remove_newlines(text: str):
 
 
 def remove_numbers(text: str):
-    text = re.sub(r'\d[\d ]+руб.( \d\d коп.)?', 'SUM', text)
+    text = re.sub(r'\d[\d\s]+руб\.( +\d\d коп\.)?', 'SUM', text)
+    text = re.sub(r'\d[\d\s]*(?:,\d\d) рубл[а-я]+', 'SUM', text)
+    text = re.sub(r'\d{5,}', 'NUM', text)
     # text = re.sub(r'\d+', 'NUM', text)
     return text
 
 
 def cut_parts(text: str) -> str:
-    no_head = re.sub(r'^.*\n\s*установил:\s*\n', '', text, 1, re.MULTILINE | re.IGNORECASE | re.DOTALL)
-    no_resolution = re.sub(r'\n\s*решил:\s*\n.*$', '', no_head, 1, re.MULTILINE | re.IGNORECASE | re.DOTALL)
+    if not re.findall(r'установил:\s*\n', text, re.IGNORECASE | re.MULTILINE):
+        print("NO MAIN PART")
+    no_head = re.sub(r'^.*\n\s*установил:\s*\n', '', text, 1, re.IGNORECASE | re.DOTALL)
+    no_resolution = re.sub(r'\n\s*решил:\s*\n.*$', '', no_head, 1, re.IGNORECASE | re.DOTALL)
     return no_resolution
 
 
