@@ -1,5 +1,6 @@
 import json
 import os
+import random
 
 import scrapy
 from scrapy import FormRequest
@@ -14,10 +15,13 @@ class DownloadSpider(scrapy.Spider):
     allowed_domains = ['ras.arbitr.ru']
 
     def start_requests(self):
-        with open('../out/docs_simple2.json', 'r') as f:
+        with open('../out/docs_simple3.json', 'r') as f:
             for line in f.readlines():
                 doc = json.loads(line)
                 if not os.path.isfile(get_path(doc)):
+                    if random.random() > 0.5:
+                        continue
+
                     yield FormRequest('http://ras.arbitr.ru/Ras/HtmlDocument/%s' % doc['doc_id'],
                                       formdata={'hilightText': 'null'},
                                       meta=doc, headers={'User-Agent': 'Wget/1.19.4 (linux-gnu)'})

@@ -2,12 +2,13 @@
 import datetime
 import json
 import logging
+import os
 import random
-import re
-import time
 
 import scrapy
 from scrapy import FormRequest
+
+from arbitr_crawler.spiders.simple_download_spider import get_path
 
 
 class SimpleCaseSpider(scrapy.Spider):
@@ -19,6 +20,11 @@ class SimpleCaseSpider(scrapy.Spider):
         'Referer': 'http://ras.arbitr.ru/',
         'X-Requested-With': 'XMLHttpRequest',
         'Content-Type': 'application/json'
+    }
+
+    skip_types = {
+        'e6dd1e2a-d64e-44bb-8ef2-614d53e432a1',  # Судебный приказ
+        'c922ae18-151f-4fda-93d7-b442d4555a06',  # Резолютивная часть решения суда по делу, рассматриваемому в порядке упрощенного производства
     }
 
     def _form_data(self, p, start, end):
@@ -71,7 +77,7 @@ class SimpleCaseSpider(scrapy.Spider):
         # only use random subset of pages
         form_data = response.meta
 
-        for i in pages_sample[:10]:
+        for i in pages_sample:
             form_data["Page"] = i
             yield FormRequest('http://ras.arbitr.ru/Ras/Search', method='POST',
                               headers=self.search_headers, body=json.dumps(form_data), callback=self.parse)
@@ -84,20 +90,19 @@ class SimpleCaseSpider(scrapy.Spider):
 
         items = result['Result']['Items']
         for item in items:
-            if item['ContentTypesString'] == 'c922ae18-151f-4fda-93d7-b442d4555a06':
-                # Резолютивная часть решения суда по делу, рассматриваемому в порядке упрощенного производства
-                continue
-
-            case_id = item['CaseId']
-            case_num = item['CaseNumber']
-            doc_id = item['Id']
-            filename = item['FileName']
-
             result = {
-                'case_id': case_id,
-                'case_num': case_num,
-                'doc_id': doc_id,
-                'doc_name': filename,
+                'case_id': item['CaseId'],
+                'case_num': item['CaseNumber'],
+                'doc_id': item['Id'],
+                'doc_name': item['FileName'],
             }
+
+            if any(skip_type in item['ContentTypesString'] for skip_type in self.skip_types):
+                try:
+                    if os.path.exists(get_path(result)):
+                        logging.info('Removing %s, content types[0]: %s' % (get_path(result), item['ContentTypes'][0]))
+                except FileNotFoundError:
+                    pass
+                continue
 
             yield result
