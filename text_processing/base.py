@@ -4,6 +4,11 @@ from natasha import MoneyExtractor, OrganisationExtractor, DatesExtractor
 from sklearn.feature_extraction.text import CountVectorizer, TfidfTransformer
 from sklearn.pipeline import Pipeline
 
+
+def make_regex(text: str):
+    return re.compile(text.replace(' ', r'\s+'), re.IGNORECASE | re.MULTILINE)
+
+
 codex_regexes = {
     re.compile(r'арбитражн[а-я]*[\s\-]+процессуальн[а-я]*\s+кодекс[а-я]*', re.IGNORECASE | re.MULTILINE): 'АПК',
     re.compile(r'гражданск[а-я]*\s+кодекс[а-я]*', re.IGNORECASE | re.MULTILINE): 'ГК',
@@ -11,6 +16,14 @@ codex_regexes = {
     re.compile(r'кодекс[а-я]*\s+административного\s+судопроизводства', re.IGNORECASE | re.MULTILINE): 'КАС',
     re.compile(r'кодекс[а-я]*\s+(об\s+)?административн[а-я]*\s+правонарушени[а-я]*', re.IGNORECASE | re.MULTILINE): 'КоАП',
 }
+
+abbrs = [
+    (make_regex(r'обществ[\w]+ с ограниченной ответственностью'), 'ООО'),
+    (make_regex(r'открыто\w+ акицонерно\w+ обществ\w+'), 'ОАО'),
+    (make_regex(r'закрыто\w+ акицонерно\w+ обществ\w+'), 'ЗАО'),
+    (make_regex(r'публично\w+ акицонерно\w+ обществ\w+'), 'ПАО'),
+    (make_regex(r'акицонерно\w+ обществ\w+'), 'АО'),
+]
 
 money = MoneyExtractor()
 dates = DatesExtractor()
@@ -41,6 +54,14 @@ def remove_numbers(text: str):
     return text
 
 
+def parse_orgs_simple(text: str):
+    for regex, repl in abbrs:
+        text = regex.sub(repl, text)  # TODO optimize
+
+    text = re.sub(r"«[^»0-9]*»", 'ORG', text)
+    return text
+
+
 def enum_orgs(text: str):
     names = set()
     for match in reversed(org(text)):
@@ -53,9 +74,9 @@ def enum_orgs(text: str):
 
 
 def cut_parts(text: str) -> str:
-    no_head = re.sub(r'^.*установил\s*:\s*\n', '', text, 1, re.IGNORECASE | re.DOTALL)
-    no_resolution = re.sub(r'(\n|суд)\s*решил\s*:\s*\n.*$', '', no_head, 1, re.IGNORECASE | re.DOTALL)
-    return no_resolution
+    text = re.sub(r'^.*установил\s*:\s*\n', '', text, 1, re.IGNORECASE | re.DOTALL)
+    text = re.sub(r'(\n|суд)\s*решил\s*:\s*\n.*$', '', text, 1, re.IGNORECASE | re.DOTALL)
+    return text
 
 
 def preprocess(text: str) -> str:

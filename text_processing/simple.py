@@ -18,7 +18,7 @@ def parse_all(basedir):
         with open(f, 'r') as fd:
             markup = '\n'.join(fd)
             soup = bs4.BeautifulSoup(markup, "lxml")
-            if not re.findall(r'установил\s*:\s*\n', soup.text, re.IGNORECASE | re.MULTILINE):
+            if not re.search(r'установил\s*:\s*\n', soup.text, re.IGNORECASE | re.MULTILINE):
                 continue
             if re.search(r'Судебный акт принят в закрытом судебном заседании', soup.text):
                 continue
