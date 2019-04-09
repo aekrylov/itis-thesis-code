@@ -1,0 +1,5 @@
+natasha
+scikit-learn
+numpy
+gensim
+tika

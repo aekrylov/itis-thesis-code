@@ -18,11 +18,11 @@ codex_regexes = {
 }
 
 abbrs = [
-    (make_regex(r'обществ[\w]+ с ограниченной ответственностью'), 'ООО'),
-    (make_regex(r'открыто\w+ акицонерно\w+ обществ\w+'), 'ОАО'),
-    (make_regex(r'закрыто\w+ акицонерно\w+ обществ\w+'), 'ЗАО'),
-    (make_regex(r'публично\w+ акицонерно\w+ обществ\w+'), 'ПАО'),
-    (make_regex(r'акицонерно\w+ обществ\w+'), 'АО'),
+    (make_regex(r'обществ\w+ с ограниченной ответственностью'), 'ООО'),
+    (make_regex(r'открыт\w+ акицонерн\w+ обществ\w+'), 'ОАО'),
+    (make_regex(r'закрыт\w+ акицонерн\w+ обществ\w+'), 'ЗАО'),
+    (make_regex(r'публичн\w+ акицонерн\w+ обществ\w+'), 'ПАО'),
+    (make_regex(r'акицонерн\w+ обществ\w+'), 'АО'),
 ]
 
 money = MoneyExtractor()
@@ -58,7 +58,7 @@ def parse_orgs_simple(text: str):
     for regex, repl in abbrs:
         text = regex.sub(repl, text)  # TODO optimize
 
-    text = re.sub(r"«[^»0-9]*»", 'ORG', text)
+    text = re.sub(r"[А-Я]+\s+«[^»0-9]*»", 'ORG', text)
     return text
 
 
@@ -89,6 +89,7 @@ def preprocess(text: str) -> str:
 
     text = remove_newlines(text)
     text = remove_numbers(text)
+    text = parse_orgs_simple(text)
     # text = enum_orgs(text)
     return text
 
