@@ -1,4 +1,6 @@
 import itertools
+import os
+import pickle
 import tempfile
 from time import time
 
@@ -16,7 +18,15 @@ print("Loading the corpus...")
 t0 = time()
 data_samples = list(itertools.islice(parse_all(app.config['DOCS_LOCATION'], from_cache=True), app.config['N_SAMPLES']))
 print("loaded %d samples in %0.3fs." % (len(data_samples), time() - t0))
-model = LsiModel(data_samples, app.config['N_TOPICS'])
+
+if app.config['LSI_PICKLE'] and os.path.exists(app.config['LSI_PICKLE']):
+    with open(app.config['LSI_PICKLE', 'rb']) as f:
+        model = pickle.load(f)
+else:
+    model = LsiModel(data_samples, app.config['N_TOPICS'])
+    if app.config['LSI_PICKLE']:
+        with open(app.config['LSI_PICKLE'], 'wb') as f:
+            pickle.dump(model, f)
 
 
 @app.route('/')
