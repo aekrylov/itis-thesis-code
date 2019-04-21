@@ -21,8 +21,8 @@ model = LsiModel(data_samples, 800)
 
 
 @app.route('/')
-def hello_world():
-    return 'Hello, World!'
+def index():
+    return render_template('index.html')
 
 
 @app.route('/doc/<idx>')
