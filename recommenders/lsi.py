@@ -2,7 +2,6 @@ import itertools
 from collections import defaultdict
 from time import time
 
-import joblib
 import numpy as np
 from gensim import corpora, models, similarities
 from nltk import SnowballStemmer
@@ -68,12 +67,11 @@ class LsiModel:
         return dictionary, bows
 
 
-mem = joblib.Memory('../out/cache/', verbose=0)
 n_samples = 20000
 
 print("Loading the corpus...")
 t0 = time()
-data_samples = list(itertools.islice(parse_all("../out/docs_simple2", mem), n_samples))
+data_samples = list(itertools.islice(parse_all("../out/docs_simple2", from_cache=True), n_samples))
 print("loaded %d samples in %0.3fs." % (len(data_samples), time() - t0))
 
 model = LsiModel(data_samples, 800)
