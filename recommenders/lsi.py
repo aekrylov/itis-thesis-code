@@ -32,25 +32,30 @@ class LsiModel:
         print("Vectorizing the corpus")
         t0 = time()
         dictionary, corpus = self.vectorize(data_samples)
+        self.dictionary = dictionary
         print('Done in %.3fs' % (time() - t0))
 
         print('Building the index')
         t0 = time()
-        tfidf = models.TfidfModel(corpus, smartirs='nnc')
-        corpus_tfidf = tfidf[corpus]
+        self.tfidf = models.TfidfModel(corpus, smartirs='nnc')
+        corpus_tfidf = self.tfidf[corpus]
 
-        lsi = models.LsiModel(corpus_tfidf, id2word=dictionary, num_topics=n_topics)
-        corpus_lsi = lsi[corpus_tfidf]
-        index = similarities.MatrixSimilarity(corpus_lsi)
+        del corpus
+
+        self.lsi = models.LsiModel(corpus_tfidf, id2word=dictionary, num_topics=n_topics)
+        self.corpus_lsi = self.lsi[corpus_tfidf]
+        self.index = similarities.MatrixSimilarity(self.corpus_lsi)
         print("TF-DF + LSI built in %.3fs" % (time() - t0))
-
-        self.dictionary = dictionary
-        self.corpus_lsi = corpus_lsi
-        self.index = index
 
     def get_similar_ids(self, idx):
         vec_lsi = self.corpus_lsi[idx]
-        sims = self.index[vec_lsi]  # perform a similarity vector against the corpus
+        sims = self.index[vec_lsi]
+        return np.argsort(-sims)[1:]
+
+    def get_similar_for_text(self, text):
+        doc = self.dictionary.doc2bow(self.tokenize(text))
+        vec_lsi = self.lsi[self.tfidf[doc]]
+        sims = self.index[vec_lsi]
         return np.argsort(-sims)[1:]
 
     @staticmethod
@@ -67,21 +72,22 @@ class LsiModel:
         return dictionary, bows
 
 
-n_samples = 20000
+if __name__ == '__main__':
+    n_samples = 20000
 
-print("Loading the corpus...")
-t0 = time()
-data_samples = list(itertools.islice(parse_all("../out/docs_simple2", from_cache=True), n_samples))
-print("loaded %d samples in %0.3fs." % (len(data_samples), time() - t0))
+    print("Loading the corpus...")
+    t0 = time()
+    data_samples = list(itertools.islice(parse_all("../out/docs_simple2", from_cache=True), n_samples))
+    print("loaded %d samples in %0.3fs." % (len(data_samples), time() - t0))
 
-model = LsiModel(data_samples, 800)
+    model = LsiModel(data_samples, 800)
 
-idx = 215
-print(data_samples[idx])
-most_similar = model.get_similar_ids(idx)
-print()
-print(most_similar[0])
-print()
-print(data_samples[most_similar[0]])
+    idx = 215
+    print(data_samples[idx])
+    most_similar = model.get_similar_ids(idx)
+    print()
+    print(most_similar[0])
+    print()
+    print(data_samples[most_similar[0]])
 
 

@@ -1,0 +1,28 @@
+{% extends "layout.html" %}
+{% block title %}Doc #{{ idx }}{% endblock %}
+
+{% block body %}
+<div class="row">
+    <div class="col-8">
+        <h2>Текст документа</h2>
+        <p>
+            {{ doc|replace("\n", "<p>")|safe }}
+        </p>
+    </div>
+    <div class="col-4">
+        <h2>Похожие документы</h2>
+        <h3>LSI(k=800)</h3>
+        {% for doc_id, doc_text in similar %}
+            <div class="card">
+                <div class="card-body">
+                    <p class="card-text">
+                        {{ doc_text|truncate(200) }}
+                    </p>
+                    <a href="{{ url_for('doc', idx=doc_id) }}" class="card-link">Перейти</a>
+                </div>
+            </div>
+        {% endfor %}
+        </div>
+    </div>
+</div>
+{% endblock %}

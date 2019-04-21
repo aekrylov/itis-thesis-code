@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    {% block head %}
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" />
+    <script type="text/javascript" src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"></script>
+    <title>{% block title %}{% endblock %} | Thesis </title>
+    {% endblock %}
+</head>
+<body>
+    <nav class="navbar">
+        <form class="form-inline my-2 my-lg-0" method="post" enctype="multipart/form-data"
+              action="{{ url_for('similar_for_file') }}">
+          <input class="form-control mr-sm-2" name="file" type="file" placeholder="Выберите файл">
+          <button class="btn btn-outline-success my-2 my-sm-0" type="submit">Найти похожие</button>
+        </form>
+    </nav>
+    <div id="content" class="container">
+        {% block body %}{% endblock %}
+    </div>
+</body>
+</html>
