@@ -1,0 +1,5 @@
+import os
+
+DOCS_LOCATION = os.environ.get('DOCS_LOCATION', os.path.dirname(os.path.abspath(__file__)) + '/../out/docs_simple2')
+N_SAMPLES = int(os.environ.get('N_SAMPLES', 20000))
+N_TOPICS = int(os.environ.get('N_TOPICS', 800))

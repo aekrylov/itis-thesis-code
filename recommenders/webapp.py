@@ -10,14 +10,13 @@ from text_processing.base import preprocess
 from text_processing.simple import parse_all
 
 app = Flask(__name__)
-app.config['TEMPLATES_AUTO_RELOAD'] = True
+app.config.from_object('recommenders.webapp_config')
 
-n_samples = 20000
 print("Loading the corpus...")
 t0 = time()
-data_samples = list(itertools.islice(parse_all("../out/docs_simple2", from_cache=True), n_samples))
+data_samples = list(itertools.islice(parse_all(app.config['DOCS_LOCATION'], from_cache=True), app.config['N_SAMPLES']))
 print("loaded %d samples in %0.3fs." % (len(data_samples), time() - t0))
-model = LsiModel(data_samples, 800)
+model = LsiModel(data_samples, app.config['N_TOPICS'])
 
 
 @app.route('/')
@@ -25,9 +24,8 @@ def index():
     return render_template('index.html')
 
 
-@app.route('/doc/<idx>')
+@app.route('/doc/<int:idx>')
 def doc(idx):
-    idx = int(idx)
     similar = [(sim, data_samples[sim]) for sim in model.get_similar_ids(idx)[:10]]
     return render_template('doc.html', doc=data_samples[idx], idx=idx, similar=similar)
 
@@ -46,4 +44,5 @@ def similar_for_file():
 
 
 if __name__ == '__main__':
-    app.run()
+    app.config['TEMPLATES_AUTO_RELOAD'] = True
+    app.run(debug=True)
