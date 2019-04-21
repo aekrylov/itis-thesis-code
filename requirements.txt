@@ -1,3 +1,5 @@
+pymystem3
+beautifulsoup4
 nltk
 joblib
 natasha

@@ -4,10 +4,14 @@ from natasha import MoneyExtractor, OrganisationExtractor, DatesExtractor
 from sklearn.feature_extraction.text import CountVectorizer, TfidfTransformer
 from sklearn.pipeline import Pipeline
 
+from pymystem3 import Mystem
+
 
 def make_regex(text: str):
     return re.compile(text.replace(' ', r'\s+'), re.IGNORECASE | re.MULTILINE)
 
+
+m = Mystem()
 
 codex_regexes = {
     re.compile(r'арбитражн[а-я]*[\s\-]+процессуальн[а-я]*\s+кодекс[а-я]*', re.IGNORECASE | re.MULTILINE): 'АПК',
@@ -75,7 +79,7 @@ def enum_orgs(text: str):
 
 def cut_parts(text: str) -> str:
     text = re.sub(r'^.*установил\s*:\s*\n', '', text, 1, re.IGNORECASE | re.DOTALL)
-    text = re.sub(r'(\n|суд)\s*решил\s*:\s*\n.*$', '', text, 1, re.IGNORECASE | re.DOTALL)
+    text = re.sub(r'\s*решил\s*:\s*\n.*$', '', text, 1, re.IGNORECASE | re.DOTALL)
     return text
 
 
