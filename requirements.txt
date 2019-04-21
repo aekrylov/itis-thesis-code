@@ -1,3 +1,5 @@
+nltk
+joblib
 natasha
 scikit-learn
 numpy
