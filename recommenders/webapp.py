@@ -1,6 +1,7 @@
 import itertools
 import os
 import pickle
+import random
 import tempfile
 from time import time
 
@@ -20,7 +21,7 @@ data_samples = list(itertools.islice(parse_all(app.config['DOCS_LOCATION'], from
 print("loaded %d samples in %0.3fs." % (len(data_samples), time() - t0))
 
 if app.config['LSI_PICKLE'] and os.path.exists(app.config['LSI_PICKLE']):
-    with open(app.config['LSI_PICKLE', 'rb']) as f:
+    with open(app.config['LSI_PICKLE'], 'rb') as f:
         model = pickle.load(f)
 else:
     model = LsiModel(data_samples, app.config['N_TOPICS'])
@@ -31,7 +32,8 @@ else:
 
 @app.route('/')
 def index():
-    return render_template('index.html')
+    random_docs = [(idx, data_samples[idx]) for idx in random.sample(range(len(data_samples)), 10)]
+    return render_template('index.html', docs=random_docs)
 
 
 @app.route('/doc/<int:idx>')
