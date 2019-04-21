@@ -27,6 +27,7 @@ abbrs = [
     (make_regex(r'закрыт\w+ акционерн\w+ обществ\w+'), 'ЗАО'),
     (make_regex(r'публичн\w+ акционерн\w+ обществ\w+'), 'ПАО'),
     (make_regex(r'акционерн\w+ обществ\w+'), 'АО'),
+    (make_regex(r'федеральн\w+ казенн\w+ учрежден\w+'), 'ФКУ'),
 ]
 
 money = MoneyExtractor()
@@ -52,7 +53,7 @@ def remove_numbers(text: str):
     #
     # for match in reversed(dates(text)):
     #     text = text[:match.span[0]] + 'DATE' + text[match.span[1]:]
-    text = re.sub(r'\d[\d\s]+([,.]\d\d\s*)?руб(\.|л[а-я]+)(\s+\d\d\s*коп(\.|[а-я]+))?', 'SUM', text)
+    text = re.sub(r'\d[\d\s]+([,.]\d\d\s*)?руб(\.|л[а-я]+)(\s*\d\d\s*коп(\.|[а-я]+))?', 'SUM', text)
     text = re.sub(r'\d{5,}', 'NUM', text)
     # text = re.sub(r'\d+', 'NUM', text)
     return text
@@ -62,7 +63,7 @@ def parse_orgs_simple(text: str):
     for regex, repl in abbrs:
         text = regex.sub(repl, text)  # TODO optimize
 
-    text = re.sub(r"[А-Я]+\s+«[^»0-9]*»", 'ORG', text)
+    text = re.sub(r"[А-Я]+\s+«[^»]{3,}»", 'ORG', text)
     return text
 
 
