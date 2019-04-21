@@ -55,6 +55,7 @@ def remove_numbers(text: str):
     #     text = text[:match.span[0]] + 'DATE' + text[match.span[1]:]
     text = re.sub(r'\d[\d\s]+([,.]\d\d\s*)?руб(\.|л[а-я]+)(\s*\d\d\s*коп(\.|[а-я]+))?', 'SUM', text)
     text = re.sub(r'\d{5,}', 'NUM', text)
+    text = re.sub(r'\d\d?\.\d\d?\.\d{4}', 'DATE', text)
     # text = re.sub(r'\d+', 'NUM', text)
     return text
 
@@ -64,6 +65,7 @@ def parse_orgs_simple(text: str):
         text = regex.sub(repl, text)  # TODO optimize
 
     text = re.sub(r"[А-Я]+\s+«[^»]{3,}»", 'ORG', text)
+    text = re.sub(r"[А-Я]+\s+\".*?\"(?=[^\w])", 'ORG', text)
     return text
 
 
