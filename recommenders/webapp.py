@@ -1,33 +1,35 @@
-import itertools
-import os
-import pickle
 import random
 import tempfile
-from time import time
 
-from flask import Flask, render_template, request
+from flask import Flask, render_template, request, url_for
+from flask_restful import Api, Resource
 from tika import unpack
 
-from recommenders.lsi import LsiModel
+from recommenders.util import load_corpus, load_lsi
 from text_processing.base import preprocess
-from text_processing.simple import parse_all
+
+
+class UploadResource(Resource):
+
+    def post(self):
+        file = request.files['file']
+
+        tmp_file = tempfile.NamedTemporaryFile()
+        file.save(tmp_file)
+        text = preprocess(unpack.from_file(tmp_file.name)['content'])
+        tmp_file.close()
+
+        return [{'id': sim, 'url': url_for('doc', idx=sim)} for sim in model.get_similar_for_text(text)[:10]]
+
 
 app = Flask(__name__)
 app.config.from_object('recommenders.webapp_config')
 
-print("Loading the corpus...")
-t0 = time()
-data_samples = list(itertools.islice(parse_all(app.config['DOCS_LOCATION'], from_cache=True), app.config['N_SAMPLES']))
-print("loaded %d samples in %0.3fs." % (len(data_samples), time() - t0))
+api = Api(app)
+api.add_resource(UploadResource, '/api/upload')
 
-if app.config['LSI_PICKLE'] and os.path.exists(app.config['LSI_PICKLE']):
-    with open(app.config['LSI_PICKLE'], 'rb') as f:
-        model = pickle.load(f)
-else:
-    model = LsiModel(data_samples, app.config['N_TOPICS'])
-    if app.config['LSI_PICKLE']:
-        with open(app.config['LSI_PICKLE'], 'wb') as f:
-            pickle.dump(model, f)
+data_samples = load_corpus(app.config['DOCS_LOCATION'], app.config['N_SAMPLES'])
+model = load_lsi(data_samples, app.config['N_TOPICS'], app.config['LSI_PICKLE'])
 
 
 @app.route('/')

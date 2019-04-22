@@ -1,4 +1,5 @@
 flask
+flask-restful
 pymystem3
 beautifulsoup4
 nltk
