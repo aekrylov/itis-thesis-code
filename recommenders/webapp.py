@@ -10,7 +10,6 @@ from text_processing.base import preprocess
 
 
 class UploadResource(Resource):
-
     def post(self):
         file = request.files['file']
 
@@ -19,7 +18,17 @@ class UploadResource(Resource):
         text = preprocess(unpack.from_file(tmp_file.name)['content'])
         tmp_file.close()
 
-        return [{'id': sim, 'url': url_for('doc', idx=sim)} for sim in model.get_similar_for_text(text)[:10]]
+        return [{'id': sim, 'url': api.url_for(DocResource, doc_id=sim)} for sim in model.get_similar_for_text(text)[:10]]
+
+
+class DocResource(Resource):
+    def get(self, doc_id):
+        similar = [{'id': sim, 'url': api.url_for(DocResource, doc_id=sim)} for sim in model.get_similar_ids(doc_id)[:10]]
+        return {
+            'id': doc_id,
+            'text': data_samples[doc_id],
+            'similar': similar
+        }
 
 
 app = Flask(__name__)
@@ -27,6 +36,7 @@ app.config.from_object('recommenders.webapp_config')
 
 api = Api(app)
 api.add_resource(UploadResource, '/api/upload')
+api.add_resource(DocResource, '/api/doc/<int:doc_id>')
 
 data_samples = load_corpus(app.config['DOCS_LOCATION'], app.config['N_SAMPLES'])
 model = load_lsi(data_samples, app.config['N_TOPICS'], app.config['LSI_PICKLE'])
