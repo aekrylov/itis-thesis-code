@@ -37,7 +37,7 @@ class LsiModel:
 
         print('Building the index')
         t0 = time()
-        self.tfidf = models.TfidfModel(corpus, smartirs='nnc')
+        self.tfidf = models.TfidfModel(corpus, smartirs='ntc')
         corpus_tfidf = self.tfidf[corpus]
 
         del corpus

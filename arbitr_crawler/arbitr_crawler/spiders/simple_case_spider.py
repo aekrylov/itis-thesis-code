@@ -98,11 +98,11 @@ class SimpleCaseSpider(scrapy.Spider):
             }
 
             if any(skip_type in item['ContentTypesString'] for skip_type in self.skip_types):
-                try:
-                    if os.path.exists(get_path(result)):
-                        logging.info('Removing %s, content types[0]: %s' % (get_path(result), item['ContentTypes'][0]))
-                except FileNotFoundError:
-                    pass
+                # try:
+                #     if os.path.exists(get_path(result)):
+                #         logging.info('Removing %s, content types: %s' % (get_path(result), item['ContentTypes']))
+                # except FileNotFoundError:
+                #     pass
                 continue
 
             yield result
