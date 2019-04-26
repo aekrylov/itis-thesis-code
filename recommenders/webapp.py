@@ -3,9 +3,10 @@ import tempfile
 
 from flask import Flask, render_template, request
 from flask_restful import Api, Resource
+from gensim.models import CoherenceModel
 from tika import unpack
 
-from recommenders.util import load_lsi, load_corpus2, load_lda
+from recommenders.util import load_lsi, load_lda, load_uci
 from text_processing.base import preprocess
 
 
@@ -45,10 +46,13 @@ api = Api(app)
 api.add_resource(UploadResource, '/api/upload')
 api.add_resource(DocResource, '/api/doc/<int:doc_id>')
 
-corpus = load_corpus2(app.config['DOCS_LOCATION'], app.config['N_SAMPLES'])
-data_samples = list(corpus.getstream())
-lsi = load_lsi(corpus, app.config['N_TOPICS'], app.config['LSI_PICKLE'])
-lda = load_lda(corpus, app.config['N_TOPICS'], app.config['LDA_PICKLE'])
+corpus, data_samples = load_uci(app.config['DOCS_LOCATION'])
+dictionary = corpus.create_dictionary()
+lsi = load_lsi(corpus, dictionary, app.config['N_TOPICS'])
+lda = load_lda(corpus, dictionary, app.config['N_TOPICS'])
+
+cm = CoherenceModel(model=lsi.lsi, dictionary=corpus.dictionary, corpus=corpus, coherence='u_mass')
+print(cm.compare_models([lsi.lsi, lda.lda]))
 
 
 @app.route('/')

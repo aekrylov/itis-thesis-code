@@ -1,10 +1,8 @@
 from collections import defaultdict
-from collections import defaultdict
 from time import time
 
 import numpy as np
-from gensim import models, similarities
-from gensim.corpora import TextCorpus
+from gensim import models, similarities, corpora
 from nltk import SnowballStemmer
 from sklearn.feature_extraction.text import TfidfVectorizer
 
@@ -31,29 +29,24 @@ class ModelBase:
         return [LsiModel.CACHE[w] for w in LsiModel.analyzer(doc) if w not in LsiModel.STOP_WORDS]
 
     @staticmethod
-    def vectorize(corpus: TextCorpus):
-        dictionary = corpus.dictionary
-        return dictionary, corpus
+    def vectorize(corpus):
+        tokenized = [LsiModel.tokenize(doc) for doc in corpus]
+
+        dictionary = corpora.Dictionary(tokenized)
+        dictionary.filter_extremes(no_below=10, no_above=0.66)
+        bows = [dictionary.doc2bow(doc) for doc in tokenized]
+        return dictionary, bows
 
 
 class LsiModel(ModelBase):
 
-    def __init__(self, corpus, n_topics):
-        print("Vectorizing the corpus")
-        t0 = time()
-        dictionary = corpus.dictionary
-        corpus = list(corpus)
+    def __init__(self, corpus, dictionary, n_topics):
         self.dictionary = dictionary
-        print('Done in %.3fs' % (time() - t0))
 
         print('Building the index')
         t0 = time()
         self.tfidf = models.TfidfModel(corpus, smartirs='ntc')
         corpus_tfidf = self.tfidf[corpus]
-
-        # TODO
-        # UciCorpus.serialize('../out/corpus.uci', corpus, id2word=dictionary)
-        del corpus
 
         self.lsi = models.LsiModel(corpus_tfidf, id2word=dictionary, num_topics=n_topics)
         self.corpus_lsi = self.lsi[corpus_tfidf]
@@ -74,17 +67,13 @@ class LsiModel(ModelBase):
 
 class LdaModel(ModelBase):
 
-    def __init__(self, corpus, n_topics):
-        dictionary = corpus.dictionary
-        corpus = list(corpus)
+    def __init__(self, corpus, dictionary, n_topics):
         self.dictionary = dictionary
 
         print('Building the index')
         t0 = time()
         self.tfidf = models.TfidfModel(corpus, smartirs='ntc')
         corpus_tfidf = self.tfidf[corpus]
-
-        del corpus
 
         self.lda = models.LdaMulticore(corpus_tfidf, id2word=dictionary, num_topics=n_topics, workers=1)
         self.corpus_lda = self.lda[corpus_tfidf]

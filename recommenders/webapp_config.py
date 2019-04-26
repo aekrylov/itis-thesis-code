@@ -2,7 +2,7 @@ import os
 
 root_dir = os.path.dirname(os.path.abspath(__file__)) + "/.."
 
-DOCS_LOCATION = os.environ.get('DOCS_LOCATION', root_dir + '/out/docs_simple2')
+DOCS_LOCATION = os.environ.get('DOCS_LOCATION', root_dir + '/out/corpus.uci')
 N_SAMPLES = int(os.environ.get('N_SAMPLES', 20000))
 N_TOPICS = int(os.environ.get('N_TOPICS', 800))
 
