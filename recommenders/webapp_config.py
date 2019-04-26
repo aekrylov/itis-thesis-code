@@ -7,3 +7,4 @@ N_SAMPLES = int(os.environ.get('N_SAMPLES', 20000))
 N_TOPICS = int(os.environ.get('N_TOPICS', 800))
 
 LSI_PICKLE = os.environ.get('LSI_PICKLE', root_dir + '/out/lsi.pickle')
+LDA_PICKLE = os.environ.get('LDA_PICKLE', root_dir + '/out/lda.pickle')
