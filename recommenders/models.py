@@ -28,15 +28,6 @@ class ModelBase:
     def tokenize(doc: str):
         return [LsiModel.CACHE[w] for w in LsiModel.analyzer(doc) if w not in LsiModel.STOP_WORDS]
 
-    @staticmethod
-    def vectorize(corpus):
-        tokenized = [LsiModel.tokenize(doc) for doc in corpus]
-
-        dictionary = corpora.Dictionary(tokenized)
-        dictionary.filter_extremes(no_below=10, no_above=0.66)
-        bows = [dictionary.doc2bow(doc) for doc in tokenized]
-        return dictionary, bows
-
 
 class LsiModel(ModelBase):
 
