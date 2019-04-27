@@ -4,11 +4,11 @@ import tempfile
 
 from flask import Flask, render_template, request
 from flask_restful import Api, Resource
-from gensim.models import CoherenceModel
+from gensim.models import CoherenceModel, TfidfModel
 from tika import unpack
 
 from recommenders.models import LsiModel, LdaModel
-from recommenders.util import load_uci, load_model, process_tfidf
+from recommenders.util import load_uci, load_model, tokenize_tfidf
 from text_processing.base import preprocess
 
 
@@ -25,9 +25,11 @@ class UploadResource(Resource):
         text = preprocess(unpack.from_file(tmp_file.name)['content'])
         tmp_file.close()
 
+        doc = tokenize_tfidf(text, tfidf, dictionary)
+
         return {
-            'similar_lsi': [doc_for_api(sim) for sim in lsi.get_similar_for_text(text)[:10]],
-            'similar_lda': [doc_for_api(sim) for sim in lda.get_similar_for_text(text)[:10]],
+            'similar_lsi': [doc_for_api(sim) for sim in lsi.get_similar(doc)[:10]],
+            'similar_lda': [doc_for_api(sim) for sim in lda.get_similar(doc)[:10]],
         }
 
 
@@ -36,8 +38,8 @@ class DocResource(Resource):
         return {
             'id': doc_id,
             'text': data_samples[doc_id],
-            'similar_lsi': [doc_for_api(sim) for sim in lsi.get_similar_ids(doc_id)[:10]],
-            'similar_lda': [doc_for_api(sim) for sim in lda.get_similar_ids(doc_id)[:10]],
+            'similar_lsi': [doc_for_api(sim) for sim in lsi.get_similar(corpus[doc_id])[:10]],
+            'similar_lda': [doc_for_api(sim) for sim in lda.get_similar(corpus[doc_id])[:10]],
         }
 
 
@@ -52,7 +54,8 @@ api.add_resource(DocResource, '/api/doc/<int:doc_id>')
 
 corpus, data_samples = load_uci(app.config['DOCS_LOCATION'])
 dictionary = corpus.create_dictionary()
-corpus = process_tfidf(corpus, dictionary)
+tfidf = TfidfModel(dictionary=dictionary, smartirs='ntc')
+corpus = [tfidf[doc] for doc in corpus]
 
 lsi = load_model(lambda: LsiModel(corpus, dictionary, app.config['N_TOPICS']), app.config['LSI_PICKLE'])
 lda = load_model(lambda: LdaModel(corpus, dictionary, app.config['N_TOPICS']), app.config['LDA_PICKLE'])
@@ -69,8 +72,8 @@ def index():
 
 @app.route('/doc/<int:idx>')
 def doc(idx):
-    similar_lsi = [(sim, data_samples[sim]) for sim in lsi.get_similar_ids(idx)[:10]]
-    similar_lda = [(sim, data_samples[sim]) for sim in lda.get_similar_ids(idx)[:10]]
+    similar_lsi = [(sim, data_samples[sim]) for sim in lsi.get_similar(corpus[idx])[:10]]
+    similar_lda = [(sim, data_samples[sim]) for sim in lda.get_similar(corpus[idx])[:10]]
     return render_template('doc.html', doc=data_samples[idx], idx=idx, similar_lsi=similar_lsi, similar_lda=similar_lda)
 
 
@@ -83,8 +86,10 @@ def similar_for_file():
     text = preprocess(unpack.from_file(tmp_file.name)['content'])
     tmp_file.close()
 
-    similar_lsi = [(sim, data_samples[sim]) for sim in lsi.get_similar_for_text(text)[:10]]
-    similar_lda = [(sim, data_samples[sim]) for sim in lda.get_similar_for_text(text)[:10]]
+    doc = tokenize_tfidf(text, tfidf, dictionary)
+
+    similar_lsi = [(sim, data_samples[sim]) for sim in lsi.get_similar(doc)[:10]]
+    similar_lda = [(sim, data_samples[sim]) for sim in lda.get_similar(doc)[:10]]
     return render_template('doc.html', doc=text, idx=-1, similar_lsi=similar_lsi, similar_lda=similar_lda)
 
 

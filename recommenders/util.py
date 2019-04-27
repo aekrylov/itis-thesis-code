@@ -3,7 +3,8 @@ import pickle
 from time import time
 
 from gensim.corpora import UciCorpus
-from gensim.models import TfidfModel
+
+from recommenders.models import ModelBase, Tokenizer
 
 
 def load_uci(location):
@@ -16,9 +17,8 @@ def load_uci(location):
     return corpus, data_samples
 
 
-def process_tfidf(corpus, dictionary):
-    model = TfidfModel(dictionary=dictionary, smartirs='ntc')
-    return [model[doc] for doc in corpus]
+def tokenize_tfidf(text, tfidf, dictionary):
+    return tfidf[dictionary.doc2bow(Tokenizer.tokenize(text))]
 
 
 def load_model(constructor, pickle_path=None):

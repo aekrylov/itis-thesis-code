@@ -4,7 +4,7 @@ from time import time
 from gensim.corpora import UciCorpus, Dictionary
 from gensim.models import TfidfModel
 
-from recommenders.models import ModelBase
+from recommenders.models import Tokenizer
 from text_processing.simple import parse_all
 
 
@@ -17,7 +17,7 @@ def load_corpus(location, n_samples=None):
 
 
 def vectorize(corpus):
-    tokenized = [ModelBase.tokenize(doc) for doc in corpus]
+    tokenized = [Tokenizer.tokenize(doc) for doc in corpus]
 
     dictionary = Dictionary(tokenized)
     dictionary.filter_extremes(no_below=10, no_above=0.66)
