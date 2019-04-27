@@ -45,22 +45,23 @@ class LsiModel(ModelBase):
 
         print('Building the index')
         t0 = time()
-        self.tfidf = models.TfidfModel(corpus, smartirs='ntc')
-        corpus_tfidf = self.tfidf[corpus]
+        self.tfidf = models.TfidfModel(dictionary=dictionary, smartirs='ntc')
+        print("TF-DF model built in %.3fs" % (time() - t0))
 
-        self.lsi = models.LsiModel(corpus_tfidf, id2word=dictionary, num_topics=n_topics)
-        self.corpus_lsi = self.lsi[corpus_tfidf]
-        self.index = similarities.MatrixSimilarity(self.corpus_lsi, num_features=n_topics)
+        self.lsi = models.LsiModel(corpus, id2word=dictionary, num_topics=n_topics, chunksize=40000)
         print("TF-DF + LSI built in %.3fs" % (time() - t0))
+        self.corpus_lsi = self.lsi[corpus]
+        self.index = similarities.MatrixSimilarity(self.corpus_lsi, num_features=n_topics)
+        print("TF-DF + LSI + index built in %.3fs" % (time() - t0))
 
     def get_similar_ids(self, idx):
         vec_lsi = self.corpus_lsi[idx]
         sims = self.index[vec_lsi]
         return np.argsort(-sims)[1:]
 
-    def get_similar_for_text(self, text):
+    def get_similar_for_text(self, text, use_tfidf=True):
         doc = self.dictionary.doc2bow(self.tokenize(text))
-        vec_lsi = self.lsi[self.tfidf[doc]]
+        vec_lsi = self.lsi[self.tfidf[doc] if use_tfidf else doc]
         sims = self.index[vec_lsi]
         return np.argsort(-sims)[1:]
 
@@ -72,21 +73,24 @@ class LdaModel(ModelBase):
 
         print('Building the index')
         t0 = time()
-        self.tfidf = models.TfidfModel(corpus, smartirs='ntc')
-        corpus_tfidf = self.tfidf[corpus]
+        self.tfidf = models.TfidfModel(dictionary=dictionary, smartirs='ntc')
+        print("TF-DF model built in %.3fs" % (time() - t0))
 
-        self.lda = models.LdaMulticore(corpus_tfidf, id2word=dictionary, num_topics=n_topics, workers=1)
-        self.corpus_lda = self.lda[corpus_tfidf]
-        self.index = similarities.MatrixSimilarity(self.corpus_lda, num_features=n_topics)
+        self.lda = models.LdaMulticore(corpus, id2word=dictionary, num_topics=n_topics, workers=1,
+                                       chunksize=4000)
         print("TF-DF + LDA built in %.3fs" % (time() - t0))
+
+        self.corpus_lda = self.lda[corpus]
+        self.index = similarities.MatrixSimilarity(self.corpus_lda, num_features=n_topics)
+        print("TF-DF + LDA + index built in %.3fs" % (time() - t0))
 
     def get_similar_ids(self, idx):
         vec_lsi = self.corpus_lda[idx]
         sims = self.index[vec_lsi]
         return np.argsort(-sims)[1:]
 
-    def get_similar_for_text(self, text):
+    def get_similar_for_text(self, text, use_tfidf=True):
         doc = self.dictionary.doc2bow(self.tokenize(text))
-        vec_lsi = self.lda[self.tfidf[doc]]
+        vec_lsi = self.lda[self.tfidf[doc] if use_tfidf else doc]
         sims = self.index[vec_lsi]
         return np.argsort(-sims)[1:]

@@ -3,12 +3,12 @@ import os
 import pickle
 from time import time
 
-from gensim import corpora
 from gensim.corpora import TextDirectoryCorpus, UciCorpus
+from gensim.models import TfidfModel
 from nltk import SnowballStemmer
 from sklearn.feature_extraction.text import TfidfVectorizer
 
-from recommenders.models import LsiModel, LdaModel, key_dependent_dict
+from recommenders.models import LsiModel, key_dependent_dict
 from text_processing.simple import parse_all, cache_path
 
 
@@ -70,24 +70,17 @@ def load_uci(location):
     return corpus, data_samples
 
 
-def load_lsi(corpus, dictionary, n_topics, pickle_path=None):
+def process_tfidf(corpus, dictionary):
+    model = TfidfModel(dictionary=dictionary, smartirs='ntc')
+    return [model[doc] for doc in corpus]
+
+
+def load_model(constructor, pickle_path=None):
     if pickle_path and os.path.exists(pickle_path):
         with open(pickle_path, 'rb') as f:
             return pickle.load(f)
     else:
-        model = LsiModel(corpus, dictionary, n_topics)
-        if pickle_path:
-            with open(pickle_path, 'wb') as f:
-                pickle.dump(model, f)
-        return model
-
-
-def load_lda(corpus, dictionary, n_topics, pickle_path=None):
-    if pickle_path and os.path.exists(pickle_path):
-        with open(pickle_path, 'rb') as f:
-            return pickle.load(f)
-    else:
-        model = LdaModel(corpus, dictionary, n_topics)
+        model = constructor()
         if pickle_path:
             with open(pickle_path, 'wb') as f:
                 pickle.dump(model, f)

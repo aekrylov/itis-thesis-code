@@ -1,3 +1,4 @@
+import logging
 import random
 import tempfile
 
@@ -6,7 +7,8 @@ from flask_restful import Api, Resource
 from gensim.models import CoherenceModel
 from tika import unpack
 
-from recommenders.util import load_lsi, load_lda, load_uci
+from recommenders.models import LsiModel, LdaModel
+from recommenders.util import load_uci, load_model, process_tfidf
 from text_processing.base import preprocess
 
 
@@ -39,6 +41,8 @@ class DocResource(Resource):
         }
 
 
+logging.basicConfig(format='%(asctime)s : %(levelname)s : %(message)s', level=logging.INFO)
+
 app = Flask(__name__)
 app.config.from_object('recommenders.webapp_config')
 
@@ -48,10 +52,12 @@ api.add_resource(DocResource, '/api/doc/<int:doc_id>')
 
 corpus, data_samples = load_uci(app.config['DOCS_LOCATION'])
 dictionary = corpus.create_dictionary()
-lsi = load_lsi(corpus, dictionary, app.config['N_TOPICS'])
-lda = load_lda(corpus, dictionary, app.config['N_TOPICS'])
+corpus = process_tfidf(corpus, dictionary)
 
-cm = CoherenceModel(model=lsi.lsi, dictionary=corpus.dictionary, corpus=corpus, coherence='u_mass')
+lsi = load_model(lambda: LsiModel(corpus, dictionary, app.config['N_TOPICS']), app.config['LSI_PICKLE'])
+lda = load_model(lambda: LdaModel(corpus, dictionary, app.config['N_TOPICS']), app.config['LDA_PICKLE'])
+
+cm = CoherenceModel(model=lsi.lsi, dictionary=dictionary, corpus=corpus, coherence='u_mass')
 print(cm.compare_models([lsi.lsi, lda.lda]))
 
 
