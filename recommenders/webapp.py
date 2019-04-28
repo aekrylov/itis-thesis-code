@@ -7,13 +7,23 @@ from flask_restful import Api, Resource
 from gensim.models import CoherenceModel, TfidfModel
 from tika import unpack
 
-from recommenders.models import LsiModel, LdaModel
+from recommenders.models import LsiModel, LdaModel, BigArtmModel, Doc2vecModel
 from recommenders.util import load_uci, load_model, tokenize_tfidf
 from text_processing.base import preprocess
 
 
 def doc_for_api(doc_id):
     return {'id': int(doc_id), 'url': api.url_for(DocResource, doc_id=doc_id, _external=True)}
+
+
+def similar_for_idx(idx):
+    return {
+            'id': idx,
+            'text': data_samples[idx],
+            'similar_lsi': [doc_for_api(sim) for sim in lsi.get_similar(corpus[idx])[1:]],
+            'similar_lda': [doc_for_api(sim) for sim in lda.get_similar(corpus[idx])[1:]],
+            'similar_d2v': [doc_for_api(sim) for sim in lda.get_similar(corpus[idx])[1:]],
+        }
 
 
 class UploadResource(Resource):
@@ -28,8 +38,9 @@ class UploadResource(Resource):
         doc = tokenize_tfidf(text, tfidf, dictionary)
 
         return {
-            'similar_lsi': [doc_for_api(sim) for sim in lsi.get_similar(doc)[:10]],
-            'similar_lda': [doc_for_api(sim) for sim in lda.get_similar(doc)[:10]],
+            'similar_lsi': [doc_for_api(sim) for sim in lsi.get_similar(doc)],
+            'similar_lda': [doc_for_api(sim) for sim in lda.get_similar(doc)],
+            'similar_d2v': [doc_for_api(sim) for sim in d2v.get_similar(text)],
         }
 
 
@@ -38,8 +49,9 @@ class DocResource(Resource):
         return {
             'id': doc_id,
             'text': data_samples[doc_id],
-            'similar_lsi': [doc_for_api(sim) for sim in lsi.get_similar(corpus[doc_id])[:10]],
-            'similar_lda': [doc_for_api(sim) for sim in lda.get_similar(corpus[doc_id])[:10]],
+            'similar_lsi': [doc_for_api(sim) for sim in lsi.get_similar(corpus[doc_id])[1:]],
+            'similar_lda': [doc_for_api(sim) for sim in lda.get_similar(corpus[doc_id])[1:]],
+            'similar_d2v': [doc_for_api(sim) for sim in d2v.get_similar(data_samples[doc_id])[1:]],
         }
 
 
@@ -59,9 +71,11 @@ corpus = [tfidf[doc] for doc in corpus]
 
 lsi = load_model(lambda: LsiModel(corpus, dictionary, app.config['N_TOPICS']), app.config['LSI_PICKLE'])
 lda = load_model(lambda: LdaModel(corpus, dictionary, app.config['N_TOPICS']), app.config['LDA_PICKLE'])
+# artm = load_model(lambda: BigArtmModel(app.config['UCI_FOLDER'], dictionary, app.config['N_TOPICS']))
+d2v = load_model(lambda: Doc2vecModel(data_samples, app.config['N_TOPICS']), app.config['D2V_PICKLE'])
 
-cm = CoherenceModel(model=lsi.lsi, dictionary=dictionary, corpus=corpus, coherence='u_mass')
-print(cm.compare_models([lsi.lsi, lda.lda]))
+# cm = CoherenceModel(model=lsi.lsi, dictionary=dictionary, corpus=corpus, coherence='u_mass')
+# print(cm.compare_models([lsi.lsi, lda.lda]))
 
 
 @app.route('/')
@@ -72,9 +86,11 @@ def index():
 
 @app.route('/doc/<int:idx>')
 def doc(idx):
-    similar_lsi = [(sim, data_samples[sim]) for sim in lsi.get_similar(corpus[idx])[:10]]
-    similar_lda = [(sim, data_samples[sim]) for sim in lda.get_similar(corpus[idx])[:10]]
-    return render_template('doc.html', doc=data_samples[idx], idx=idx, similar_lsi=similar_lsi, similar_lda=similar_lda)
+    similar_lsi = [(sim, data_samples[sim]) for sim in lsi.get_similar(corpus[idx])[1:]]
+    similar_lda = [(sim, data_samples[sim]) for sim in lda.get_similar(corpus[idx])[1:]]
+    similar_d2v = [(sim, data_samples[sim]) for sim in d2v.get_similar(data_samples[idx])[1:]]
+    return render_template('doc.html', doc=data_samples[idx], idx=idx,
+                           similar_lsi=similar_lsi, similar_lda=similar_lda, similar_d2v=similar_d2v)
 
 
 @app.route('/upload', methods=['POST'])
@@ -88,9 +104,11 @@ def similar_for_file():
 
     doc = tokenize_tfidf(text, tfidf, dictionary)
 
-    similar_lsi = [(sim, data_samples[sim]) for sim in lsi.get_similar(doc)[:10]]
-    similar_lda = [(sim, data_samples[sim]) for sim in lda.get_similar(doc)[:10]]
-    return render_template('doc.html', doc=text, idx=-1, similar_lsi=similar_lsi, similar_lda=similar_lda)
+    similar_lsi = [(sim, data_samples[sim]) for sim in lsi.get_similar(doc)]
+    similar_lda = [(sim, data_samples[sim]) for sim in lda.get_similar(doc)]
+    similar_d2v = [(sim, data_samples[sim]) for sim in d2v.get_similar(text)]
+    return render_template('doc.html', doc=text, idx=-1,
+                           similar_lsi=similar_lsi, similar_lda=similar_lda, similar_d2v=similar_d2v)
 
 
 if __name__ == '__main__':
