@@ -15,7 +15,7 @@ class DownloadSpider(scrapy.Spider):
     allowed_domains = ['ras.arbitr.ru']
 
     def start_requests(self):
-        with open('../out/docs_simple3.json', 'r') as f:
+        with open('../out/docs_simple4.json', 'r') as f:
             for line in f.readlines():
                 doc = json.loads(line)
                 if not os.path.isfile(get_path(doc)):

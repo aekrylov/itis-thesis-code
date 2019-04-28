@@ -2,13 +2,10 @@
 import datetime
 import json
 import logging
-import os
 import random
 
 import scrapy
 from scrapy import FormRequest
-
-from arbitr_crawler.spiders.simple_download_spider import get_path
 
 
 class SimpleCaseSpider(scrapy.Spider):
@@ -44,18 +41,18 @@ class SimpleCaseSpider(scrapy.Spider):
         }
 
     def start_requests(self):
-        chunks = 365
+        start_date = datetime.datetime(2016, 1, 1)
+        end_date = datetime.datetime(2019, 3, 31)
 
-        start_date = datetime.datetime(2018, 1, 1)
-        end_date = datetime.datetime(2018, 12, 31)
+        delta = datetime.timedelta(days=1)
 
-        delta = (end_date - start_date) / chunks
+        chunks = (end_date - start_date) // delta
 
         for i in range(chunks):
             start = start_date + delta*i
             end = start + delta
 
-            form_data = self._form_data(1, start, end)
+            form_data = self._form_data(1, start, end - datetime.timedelta(seconds=1))
 
             yield FormRequest('http://ras.arbitr.ru/Ras/Search', method='POST', meta=form_data,
                               headers=self.search_headers, body=json.dumps(form_data), callback=self.parse_first_page)
@@ -74,7 +71,6 @@ class SimpleCaseSpider(scrapy.Spider):
         pages_sample = list(range(2, pages+1))
         random.shuffle(pages_sample)
 
-        # only use random subset of pages
         form_data = response.meta
 
         for i in pages_sample:
@@ -98,11 +94,6 @@ class SimpleCaseSpider(scrapy.Spider):
             }
 
             if any(skip_type in item['ContentTypesString'] for skip_type in self.skip_types):
-                # try:
-                #     if os.path.exists(get_path(result)):
-                #         logging.info('Removing %s, content types: %s' % (get_path(result), item['ContentTypes']))
-                # except FileNotFoundError:
-                #     pass
                 continue
 
             yield result

@@ -92,10 +92,10 @@ DOWNLOADER_MIDDLEWARES = {
 #HTTPCACHE_IGNORE_HTTP_CODES = []
 #HTTPCACHE_STORAGE = 'scrapy.extensions.httpcache.FilesystemCacheStorage'
 
-SPLASH_URL = 'http://localhost:8050'
-DUPEFILTER_CLASS = 'scrapy_splash.SplashAwareDupeFilter'
+# SPLASH_URL = 'http://localhost:8050'
+# DUPEFILTER_CLASS = 'scrapy_splash.SplashAwareDupeFilter'
 
-FEED_URI = 'file:///home/anth/prog/itis-thesis/code/out/docs_simple2.json'
+FEED_URI = 'file:///home/anth/prog/itis-thesis/code/out/docs_simple4.json'
 FEED_FORMAT = 'jsonlines'
 
 LOG_LEVEL = 'INFO'
