@@ -1,5 +1,7 @@
+import json
 import os
 import pickle
+import re
 from time import time
 
 from gensim.corpora import UciCorpus
@@ -30,7 +32,17 @@ class RandomAccessCorpus:
 def load_uci(location):
     print("Loading the corpus...")
     t0 = time()
-    paths = pickle.load(open(location + '.docs.pickle', 'rb'))
+
+    with open(location + '.docs.pickle', 'rb') as f:
+        paths = pickle.load(f)
+
+    with open(location + '.meta.json', 'r') as f_meta:
+        meta_map = {}
+        for line in f_meta:
+            doc_meta = json.loads(line)
+            meta_map[doc_meta['case_id']] = doc_meta
+        metadata = [meta_map[re.search(r'([a-z0-9-]+)\.txt', p).group(1)] for p in paths]
+
     data_samples = RandomAccessCorpus(paths)
     corpus = UciCorpus(location)
     print("loaded %d samples in %0.3fs." % (len(corpus), time() - t0))
@@ -40,7 +52,7 @@ def load_uci(location):
     dictionary.token2id = {k.decode('utf-8'): v for k, v in dictionary.token2id.items()}
     dictionary.id2token = dict()
 
-    return corpus, data_samples, dictionary
+    return corpus, data_samples, dictionary, metadata
 
 
 def tokenize(text, dictionary):
@@ -52,3 +64,7 @@ def load(pickle_path):
         raise FileNotFoundError()
     with open(pickle_path, 'rb') as f:
         return pickle.load(f)
+
+
+def kad_pdf_path(meta):
+    return 'http://kad.arbitr.ru/PdfDocument/%s/%s/%s' % (meta['case_id'], meta['doc_id'], meta['doc_name'])

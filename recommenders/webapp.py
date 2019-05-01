@@ -7,12 +7,17 @@ from flask_restful import Api, Resource
 from gensim.models import TfidfModel
 from tika import unpack
 
-from recommenders.util import load_uci, tokenize, load
+from recommenders.util import load_uci, tokenize, load, kad_pdf_path
 from text_processing.base import preprocess
 
 
 def doc_for_api(doc_id):
-    return {'id': int(doc_id), 'url': api.url_for(DocResource, doc_id=doc_id, _external=True)}
+    return {
+        'id': int(doc_id),
+        'url': api.url_for(DocResource, doc_id=doc_id, _external=True),
+        'case_number': metadata[doc_id]['case_num'],
+        'pdf_path': kad_pdf_path(metadata[doc_id]),
+    }
 
 
 def get_similar(data_sample, idx_to_doc=lambda x: x, cut_first=False):
@@ -47,6 +52,8 @@ class DocResource(Resource):
     def get(self, doc_id):
         return {
             'id': doc_id,
+            'case_number': metadata[doc_id]['case_num'],
+            'pdf_path': kad_pdf_path(metadata[doc_id]),
             'text': data_samples[doc_id],
             'similar': get_similar(data_samples[doc_id], doc_for_api, True),
         }
@@ -61,7 +68,7 @@ api = Api(app)
 api.add_resource(UploadResource, '/api/upload')
 api.add_resource(DocResource, '/api/doc/<int:doc_id>')
 
-corpus, data_samples, dictionary = load_uci(app.config['DOCS_LOCATION'])
+corpus, data_samples, dictionary, metadata = load_uci(app.config['DOCS_LOCATION'])
 tfidf = TfidfModel(dictionary=dictionary, smartirs='ntc')
 del corpus
 
@@ -82,7 +89,7 @@ def index():
 @app.route('/doc/<int:idx>')
 def doc(idx):
     similar = get_similar(data_samples[idx], lambda sim: (sim, data_samples[sim]), True)
-    return render_template('doc.html', doc=data_samples[idx], idx=idx, **similar)
+    return render_template('doc.html', doc=data_samples[idx], case_num=metadata[idx]['case_num'], **similar)
 
 
 @app.route('/upload', methods=['POST'])

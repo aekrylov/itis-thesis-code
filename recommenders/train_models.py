@@ -22,7 +22,7 @@ if __name__ == '__main__':
 
     logging.basicConfig(format='%(asctime)s : %(levelname)s : %(message)s', level=logging.INFO)
 
-    corpus, data_samples, dictionary = load_uci(conf.DOCS_LOCATION)
+    corpus, data_samples, dictionary, _ = load_uci(conf.DOCS_LOCATION)
 
     if lsi_on or lda_on:
         tfidf = TfidfModel(dictionary=dictionary, smartirs='ntc')

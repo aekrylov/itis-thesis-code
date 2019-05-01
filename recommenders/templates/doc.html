@@ -1,5 +1,5 @@
 {% extends "layout.html" %}
-{% block title %}Doc #{{ idx }}{% endblock %}
+{% block title %}Дело {{ case_num }}{% endblock %}
 
 {% block body %}
 <div class="row">
@@ -15,19 +15,6 @@
             <div class="col">
                 <h3>LSI(k=300)</h3>
             {% for doc_id, doc_text in lsi %}
-                <div class="card">
-                    <div class="card-body">
-                        <p class="card-text">
-                            {{ doc_text|truncate(200) }}
-                        </p>
-                        <a href="{{ url_for('doc', idx=doc_id) }}" class="card-link">Перейти</a>
-                    </div>
-                </div>
-            {% endfor %}
-            </div>
-            <div class="col">
-                        <h3>LDA(k=300)</h3>
-            {% for doc_id, doc_text in lda %}
                 <div class="card">
                     <div class="card-body">
                         <p class="card-text">
