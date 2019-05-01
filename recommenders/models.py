@@ -99,6 +99,7 @@ class BigArtmModel(ModelBase):
         bv_dict = bv.dictionary
         topic_names = [str(i) for i in range(n_topics)]
 
+        logging.info("Fitting the ARTM model")
         model = artm.ARTM(topic_names=topic_names, dictionary=bv_dict, cache_theta=True,
                           scores=[
                                    artm.PerplexityScore(name='PerplexityScore', dictionary=bv_dict),
@@ -114,12 +115,15 @@ class BigArtmModel(ModelBase):
 
         model.fit_offline(batch_vectorizer=bv, num_collection_passes=10)
 
+        logging.info("Processing word-topic matrices")
+
         # Create a new word-topic matrix according to dictionary indices
         self.phi = np.zeros((len(dictionary), n_topics), dtype=np.float64)
         for word, vec in model.phi_.iterrows():
             idx = dictionary.token2id[word[1]]
             self.phi[idx, :] = vec
 
+        logging.info("Building the index for ARTM")
         corpus = model.get_theta().T.sort_index()
         self.index = similarities.MatrixSimilarity(corpus, num_features=n_topics, num_best=self.N_BEST)
 
