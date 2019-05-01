@@ -22,23 +22,16 @@ if __name__ == '__main__':
 
     logging.basicConfig(format='%(asctime)s : %(levelname)s : %(message)s', level=logging.INFO)
 
-    corpus, data_samples = load_uci(conf.DOCS_LOCATION)
-    dictionary = corpus.create_dictionary()
+    corpus, data_samples, dictionary = load_uci(conf.DOCS_LOCATION)
 
-    # TODO why
-    dictionary.token2id = {k.decode('utf-8'): v for k, v in dictionary.token2id.items()}
-    dictionary.id2token = dict()
-
-    if lsi_on:
+    if lsi_on or lda_on:
         tfidf = TfidfModel(dictionary=dictionary, smartirs='ntc')
         corpus = [tfidf[doc] for doc in corpus]
 
+    if lsi_on:
         save(LsiModel(corpus, dictionary, conf.N_TOPICS), conf.LSI_PICKLE)
 
     if lda_on:
-        tfidf = TfidfModel(dictionary=dictionary, smartirs='ntc')
-        corpus = [tfidf[doc] for doc in corpus]
-
         save(LdaModel(corpus, dictionary, conf.N_TOPICS), conf.LDA_PICKLE)
 
     if d2v_on:

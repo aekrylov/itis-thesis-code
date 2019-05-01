@@ -3,7 +3,7 @@ from collections import defaultdict
 from time import time
 
 import numpy as np
-from gensim import models, similarities
+from gensim import models, similarities, matutils
 from gensim.models.doc2vec import TaggedDocument, Doc2Vec
 from nltk import SnowballStemmer
 from sklearn.feature_extraction.text import TfidfVectorizer
@@ -56,7 +56,7 @@ class SimilarityIndex(ModelBase):
 
     def get_similar(self, doc, topn=10):
         sims = self.index[self.model[doc]]
-        return np.argsort(-sims)[:topn]
+        return [t[0] for t in sims[:topn]]
 
 
 class LsiModel(ModelBase):
@@ -72,7 +72,7 @@ class LsiModel(ModelBase):
 
     def get_similar(self, doc, topn=10):
         sims = self.index[self.lsi[doc]]
-        return np.argsort(-sims)[:topn]
+        return [t[0] for t in sims[:topn]]
 
 
 class LdaModel(ModelBase):
@@ -88,7 +88,7 @@ class LdaModel(ModelBase):
 
     def get_similar(self, doc, topn=10):
         sims = self.index[self.lda[doc]]
-        return np.argsort(-sims)[:topn]
+        return [t[0] for t in sims[:topn]]
 
 
 class BigArtmModel(ModelBase):
@@ -125,12 +125,13 @@ class BigArtmModel(ModelBase):
 
         logging.info("Building the index for ARTM")
         corpus = model.get_theta().T.sort_index()
+        corpus = [matutils.full2sparse(row) for index, row in corpus.iterrows()]
         self.index = similarities.MatrixSimilarity(corpus, num_features=n_topics, num_best=self.N_BEST)
 
     def get_similar(self, doc, topn=10):
-        vec = np.matmul([doc], self.phi)
-        sims = self.index[vec]
-        return np.argsort(-sims)[:topn]
+        vec = np.matmul(matutils.sparse2full(doc, self.phi.shape[0]), self.phi)
+        sims = self.index[matutils.full2sparse(vec)]
+        return [t[0] for t in sims[:topn]]
 
 
 class Doc2vecModel(ModelBase):

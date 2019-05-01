@@ -61,8 +61,7 @@ api = Api(app)
 api.add_resource(UploadResource, '/api/upload')
 api.add_resource(DocResource, '/api/doc/<int:doc_id>')
 
-corpus, data_samples = load_uci(app.config['DOCS_LOCATION'])
-dictionary = corpus.create_dictionary()
+corpus, data_samples, dictionary = load_uci(app.config['DOCS_LOCATION'])
 tfidf = TfidfModel(dictionary=dictionary, smartirs='ntc')
 del corpus
 
