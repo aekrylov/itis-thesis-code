@@ -4,14 +4,10 @@ from natasha import MoneyExtractor, OrganisationExtractor, DatesExtractor
 from sklearn.feature_extraction.text import CountVectorizer, TfidfTransformer
 from sklearn.pipeline import Pipeline
 
-from pymystem3 import Mystem
-
 
 def make_regex(text: str):
     return re.compile(text.replace(' ', r'\s+'), re.IGNORECASE | re.MULTILINE)
 
-
-m = Mystem()
 
 codex_regexes = {
     re.compile(r'арбитражн[а-я]*[\s\-]+процессуальн[а-я]*\s+кодекс[а-я]*', re.IGNORECASE | re.MULTILINE): 'АПК',
@@ -54,8 +50,9 @@ def remove_numbers(text: str):
     # for match in reversed(dates(text)):
     #     text = text[:match.span[0]] + 'DATE' + text[match.span[1]:]
     text = re.sub(r'\d[\d\s]+([,.]\d\d\s*)?руб(\.|л[а-я]+)(\s*\d\d\s*коп(\.|[а-я]+))?', 'SUM', text)
-    text = re.sub(r'\d\d?\.\d\d?\.\d{4}', 'DATE', text)
+    text = re.sub(r'\d\d?\.\d\d?\.\d{4}(\s*г(\.|ода))?', 'DATE', text)
     text = re.sub(r'\d\d? [а-я]+ \d{4} г(\.|ода)', 'DATE', text)
+    text = re.sub(r'(\d{5,})', 'NUM', text)
     text = re.sub(r'[2-9]\d{3,}', 'NUM', text)  # оставляем статьи ГК, их 1551 штука
     # text = re.sub(r'\d+', 'NUM', text)
     return text

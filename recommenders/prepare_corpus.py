@@ -1,19 +1,22 @@
 import itertools
+import pickle
+import sys
 from time import time
 
 from gensim.corpora import UciCorpus, Dictionary
-from gensim.models import TfidfModel
 
 from recommenders.models import Tokenizer
-from text_processing.simple import parse_all
+from text_processing.simple import parse_all, cache_path
 
 
 def load_corpus(location, n_samples=None):
     print("Loading the corpus...")
     t0 = time()
-    data_samples = list(itertools.islice(parse_all(location, from_cache=True), n_samples))
+    data_samples = list(itertools.islice(parse_all(location, from_cache=True, with_paths=True), n_samples))
+    paths, data_samples = zip(*data_samples)
+    paths = [cache_path(p) for p in paths]
     print("loaded %d samples in %0.3fs." % (len(data_samples), time() - t0))
-    return data_samples
+    return paths, data_samples
 
 
 def vectorize(corpus):
@@ -25,19 +28,18 @@ def vectorize(corpus):
     return dictionary, bows
 
 
-def process_tfidf(corpus, dictionary):
-    model = TfidfModel(dictionary=dictionary, smartirs='ntc')
-    return [model[doc] for doc in corpus]
-
-
-def save_uci(corpus, dictionary, location):
+def save_uci(paths, corpus, dictionary, location):
     UciCorpus.serialize(location, corpus, id2word=dictionary)
+    with open(location + '.docs.pickle', 'wb') as f:
+        pickle.dump(paths, f)
 
 
-corpus_location = '../out/docs_simple2'
-save_location = '../out/corpus.uci'
+if __name__ == '__main__':
+    corpus_location = sys.argv[-2] if len(sys.argv) > 2 else '../out/docs_simple2'
+    save_location = sys.argv[-1] if len(sys.argv) > 1 else '../out/corpus.uci'
 
-data_samples = load_corpus(corpus_location)
-dictionary, docs = vectorize(data_samples)
+    paths, data_samples = load_corpus(corpus_location)
+    dictionary, docs = vectorize(data_samples)
 
-save_uci(docs, dictionary, save_location)
+    save_uci(paths, docs, dictionary, save_location)
+
