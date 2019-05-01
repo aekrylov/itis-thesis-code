@@ -4,10 +4,10 @@ import tempfile
 
 from flask import Flask, render_template, request
 from flask_restful import Api, Resource
-from gensim.models import CoherenceModel, TfidfModel
+from gensim.models import TfidfModel
 from tika import unpack
 
-from recommenders.models import LsiModel, LdaModel, BigArtmModel, Doc2vecModel
+from recommenders.models import LsiModel, LdaModel, Doc2vecModel
 from recommenders.util import load_uci, load_model, tokenize_tfidf
 from text_processing.base import preprocess
 
@@ -18,12 +18,12 @@ def doc_for_api(doc_id):
 
 def similar_for_idx(idx):
     return {
-            'id': idx,
-            'text': data_samples[idx],
-            'similar_lsi': [doc_for_api(sim) for sim in lsi.get_similar(corpus[idx])[1:]],
-            'similar_lda': [doc_for_api(sim) for sim in lda.get_similar(corpus[idx])[1:]],
-            'similar_d2v': [doc_for_api(sim) for sim in lda.get_similar(corpus[idx])[1:]],
-        }
+        'id': idx,
+        'text': data_samples[idx],
+        'similar_lsi': [doc_for_api(sim) for sim in lsi.get_similar(corpus[idx])[1:]],
+        'similar_lda': [doc_for_api(sim) for sim in lda.get_similar(corpus[idx])[1:]],
+        'similar_d2v': [doc_for_api(sim) for sim in lda.get_similar(corpus[idx])[1:]],
+    }
 
 
 class UploadResource(Resource):

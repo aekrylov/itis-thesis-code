@@ -10,3 +10,9 @@ N_TOPICS = int(os.environ.get('N_TOPICS', 800))
 LSI_PICKLE = os.environ.get('LSI_PICKLE', root_dir + '/out/lsi.pickle')
 LDA_PICKLE = os.environ.get('LDA_PICKLE', root_dir + '/out/lda.pickle')
 D2V_PICKLE = os.environ.get('D2V_PICKLE', root_dir + '/out/d2v.pickle')
+ARTM_PICKLE = os.environ.get('ARTM_PICKLE', root_dir + '/out/artm.pickle')
+
+RESTFUL_JSON = {
+    'ensure_ascii': False,
+    'indent': 4
+}
