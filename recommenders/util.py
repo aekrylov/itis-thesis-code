@@ -33,8 +33,9 @@ def load_uci(location):
     print("Loading the corpus...")
     t0 = time()
 
-    with open(location + '.docs.pickle', 'rb') as f:
-        paths = pickle.load(f)
+    paths = load(location + '.docs.pickle')
+
+    dictionary = load(location + '.dict.pickle')
 
     with open(location + '.meta.json', 'r') as f_meta:
         meta_map = {}
@@ -46,11 +47,6 @@ def load_uci(location):
     data_samples = RandomAccessCorpus(paths)
     corpus = UciCorpus(location)
     print("loaded %d samples in %0.3fs." % (len(corpus), time() - t0))
-
-    dictionary = corpus.create_dictionary()
-    # TODO why
-    dictionary.token2id = {k.decode('utf-8'): v for k, v in dictionary.token2id.items()}
-    dictionary.id2token = dict()
 
     return corpus, data_samples, dictionary, metadata
 

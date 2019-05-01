@@ -33,6 +33,9 @@ def save_uci(paths, corpus, dictionary, location):
     with open(location + '.docs.pickle', 'wb') as f:
         pickle.dump(paths, f)
 
+    with open(location + '.dict.pickle', 'wb') as f:
+        pickle.dump(dictionary, f)
+
 
 if __name__ == '__main__':
     corpus_location = sys.argv[-2] if len(sys.argv) > 2 else '../out/docs_simple2'
