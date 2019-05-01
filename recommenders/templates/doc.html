@@ -13,8 +13,8 @@
         <h2>Похожие документы</h2>
         <div class="row">
             <div class="col">
-                <h3>LSI(k=800)</h3>
-            {% for doc_id, doc_text in similar_lsi %}
+                <h3>LSI(k=300)</h3>
+            {% for doc_id, doc_text in lsi %}
                 <div class="card">
                     <div class="card-body">
                         <p class="card-text">
@@ -26,8 +26,8 @@
             {% endfor %}
             </div>
             <div class="col">
-                        <h3>LDA(k=800)</h3>
-            {% for doc_id, doc_text in similar_lda %}
+                        <h3>LDA(k=300)</h3>
+            {% for doc_id, doc_text in lda %}
                 <div class="card">
                     <div class="card-body">
                         <p class="card-text">
@@ -39,8 +39,21 @@
             {% endfor %}
             </div>
             <div class="col">
-                        <h3>Doc2vec(k=100)</h3>
-            {% for doc_id, doc_text in similar_d2v %}
+                        <h3>Doc2vec(k=300)</h3>
+            {% for doc_id, doc_text in d2v %}
+                <div class="card">
+                    <div class="card-body">
+                        <p class="card-text">
+                            {{ doc_text|truncate(200) }}
+                        </p>
+                        <a href="{{ url_for('doc', idx=doc_id) }}" class="card-link">Перейти</a>
+                    </div>
+                </div>
+            {% endfor %}
+            </div>
+            <div class="col">
+                        <h3>ARTM(k=300)</h3>
+            {% for doc_id, doc_text in artm %}
                 <div class="card">
                     <div class="card-body">
                         <p class="card-text">

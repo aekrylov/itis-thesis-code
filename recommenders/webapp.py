@@ -7,8 +7,7 @@ from flask_restful import Api, Resource
 from gensim.models import TfidfModel
 from tika import unpack
 
-from recommenders.models import LsiModel, LdaModel, Doc2vecModel
-from recommenders.util import load_uci, load_model, tokenize_tfidf
+from recommenders.util import load_uci, tokenize, load
 from text_processing.base import preprocess
 
 
@@ -16,13 +15,16 @@ def doc_for_api(doc_id):
     return {'id': int(doc_id), 'url': api.url_for(DocResource, doc_id=doc_id, _external=True)}
 
 
-def similar_for_idx(idx):
+def get_similar(data_sample, idx_to_doc=lambda x: x, cut_first=False):
+    bow = tokenize(data_sample, dictionary)
+    vec_tfidf = tfidf[bow]
+
+    start_idx = 1 if cut_first else 0
     return {
-        'id': idx,
-        'text': data_samples[idx],
-        'similar_lsi': [doc_for_api(sim) for sim in lsi.get_similar(corpus[idx])[1:]],
-        'similar_lda': [doc_for_api(sim) for sim in lda.get_similar(corpus[idx])[1:]],
-        'similar_d2v': [doc_for_api(sim) for sim in lda.get_similar(corpus[idx])[1:]],
+        'lsi': [idx_to_doc(sim) for sim in lsi.get_similar(vec_tfidf)[start_idx:]],
+        'lda': [idx_to_doc(sim) for sim in lda.get_similar(vec_tfidf)[start_idx:]],
+        'd2v': [idx_to_doc(sim) for sim in d2v.get_similar(data_sample)[start_idx:]],
+        'artm': [idx_to_doc(sim) for sim in artm.get_similar(bow)[start_idx:]],
     }
 
 
@@ -35,12 +37,9 @@ class UploadResource(Resource):
         text = preprocess(unpack.from_file(tmp_file.name)['content'])
         tmp_file.close()
 
-        doc = tokenize_tfidf(text, tfidf, dictionary)
-
         return {
-            'similar_lsi': [doc_for_api(sim) for sim in lsi.get_similar(doc)],
-            'similar_lda': [doc_for_api(sim) for sim in lda.get_similar(doc)],
-            'similar_d2v': [doc_for_api(sim) for sim in d2v.get_similar(text)],
+            'text': text,
+            'similar': get_similar(text, doc_for_api)
         }
 
 
@@ -49,9 +48,7 @@ class DocResource(Resource):
         return {
             'id': doc_id,
             'text': data_samples[doc_id],
-            'similar_lsi': [doc_for_api(sim) for sim in lsi.get_similar(corpus[doc_id])[1:]],
-            'similar_lda': [doc_for_api(sim) for sim in lda.get_similar(corpus[doc_id])[1:]],
-            'similar_d2v': [doc_for_api(sim) for sim in d2v.get_similar(data_samples[doc_id])[1:]],
+            'similar': get_similar(data_samples[doc_id], doc_for_api, True),
         }
 
 
@@ -67,30 +64,26 @@ api.add_resource(DocResource, '/api/doc/<int:doc_id>')
 corpus, data_samples = load_uci(app.config['DOCS_LOCATION'])
 dictionary = corpus.create_dictionary()
 tfidf = TfidfModel(dictionary=dictionary, smartirs='ntc')
-corpus = [tfidf[doc] for doc in corpus]
+del corpus
 
-lsi = load_model(lambda: LsiModel(corpus, dictionary, app.config['N_TOPICS']), app.config['LSI_PICKLE'])
-lda = load_model(lambda: LdaModel(corpus, dictionary, app.config['N_TOPICS']), app.config['LDA_PICKLE'])
-# artm = load_model(lambda: BigArtmModel(app.config['UCI_FOLDER'], dictionary, app.config['N_TOPICS']))
-d2v = load_model(lambda: Doc2vecModel(data_samples, app.config['N_TOPICS']), app.config['D2V_PICKLE'])
-
-# cm = CoherenceModel(model=lsi.lsi, dictionary=dictionary, corpus=corpus, coherence='u_mass')
-# print(cm.compare_models([lsi.lsi, lda.lda]))
+logging.info('Unpickling models')
+lsi = load(app.config['LSI_PICKLE'])
+lda = load(app.config['LDA_PICKLE'])
+artm = load(app.config['ARTM_PICKLE'])
+d2v = load(app.config['D2V_PICKLE'])
+logging.info('Unpickling finished')
 
 
 @app.route('/')
 def index():
-    random_docs = [(idx, data_samples[idx]) for idx in random.sample(range(len(corpus)), 10)]
+    random_docs = [(idx, data_samples[idx]) for idx in random.sample(range(len(data_samples)), 10)]
     return render_template('index.html', docs=random_docs)
 
 
 @app.route('/doc/<int:idx>')
 def doc(idx):
-    similar_lsi = [(sim, data_samples[sim]) for sim in lsi.get_similar(corpus[idx])[1:]]
-    similar_lda = [(sim, data_samples[sim]) for sim in lda.get_similar(corpus[idx])[1:]]
-    similar_d2v = [(sim, data_samples[sim]) for sim in d2v.get_similar(data_samples[idx])[1:]]
-    return render_template('doc.html', doc=data_samples[idx], idx=idx,
-                           similar_lsi=similar_lsi, similar_lda=similar_lda, similar_d2v=similar_d2v)
+    similar = get_similar(data_samples[idx], lambda sim: (sim, data_samples[sim]), True)
+    return render_template('doc.html', doc=data_samples[idx], idx=idx, **similar)
 
 
 @app.route('/upload', methods=['POST'])
@@ -102,13 +95,8 @@ def similar_for_file():
     text = preprocess(unpack.from_file(tmp_file.name)['content'])
     tmp_file.close()
 
-    doc = tokenize_tfidf(text, tfidf, dictionary)
-
-    similar_lsi = [(sim, data_samples[sim]) for sim in lsi.get_similar(doc)]
-    similar_lda = [(sim, data_samples[sim]) for sim in lda.get_similar(doc)]
-    similar_d2v = [(sim, data_samples[sim]) for sim in d2v.get_similar(text)]
-    return render_template('doc.html', doc=text, idx=-1,
-                           similar_lsi=similar_lsi, similar_lda=similar_lda, similar_d2v=similar_d2v)
+    similar = get_similar(text, lambda sim: (sim, data_samples[sim]))
+    return render_template('doc.html', doc=text, idx=-1, **similar)
 
 
 if __name__ == '__main__':
