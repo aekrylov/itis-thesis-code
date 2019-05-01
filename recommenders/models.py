@@ -110,7 +110,7 @@ class BigArtmModel(ModelBase):
                           regularizers=[
                                    artm.SmoothSparseThetaRegularizer(name='SparseTheta', tau=-0.15),
                                    artm.SmoothSparsePhiRegularizer(name='SparsePhi', tau=-0.1),
-                                   artm.DecorrelatorPhiRegularizer(name='DecorrelatorPhi', tau=1.5e+5)
+                                   artm.DecorrelatorPhiRegularizer(name='DecorrelatorPhi', tau=1)
                           ])
 
         model.fit_offline(batch_vectorizer=bv, num_collection_passes=10)
@@ -118,7 +118,7 @@ class BigArtmModel(ModelBase):
         logging.info("Processing word-topic matrices")
 
         # Create a new word-topic matrix according to dictionary indices
-        self.phi = np.zeros((len(dictionary), n_topics), dtype=np.float64)
+        self.phi = np.zeros(model.phi_.shape, dtype=np.float64)
         for word, vec in model.phi_.iterrows():
             idx = dictionary.token2id[word[1]]
             self.phi[idx, :] = vec

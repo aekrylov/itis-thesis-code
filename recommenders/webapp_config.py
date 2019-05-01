@@ -11,6 +11,7 @@ LSI_PICKLE = os.environ.get('LSI_PICKLE', UCI_FOLDER + '/lsi.pickle')
 LDA_PICKLE = os.environ.get('LDA_PICKLE', UCI_FOLDER + '/lda.pickle')
 D2V_PICKLE = os.environ.get('D2V_PICKLE', UCI_FOLDER + '/d2v.pickle')
 ARTM_PICKLE = os.environ.get('ARTM_PICKLE', UCI_FOLDER + '/artm.pickle')
+ARTM2_PICKLE = os.environ.get('ARTM2_PICKLE', UCI_FOLDER + '/artm_2.pickle')
 
 RESTFUL_JSON = {
     'ensure_ascii': False,

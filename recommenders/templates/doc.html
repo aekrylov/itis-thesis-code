@@ -1,6 +1,22 @@
 {% extends "layout.html" %}
 {% block title %}Дело {{ case_num }}{% endblock %}
 
+{% macro similar(name, collection) %}
+    <div class="col">
+        <h3>{{ name }}</h3>
+    {% for doc_id, doc_text in collection %}
+        <div class="card">
+            <div class="card-body">
+                <p class="card-text">
+                    {{ doc_text|truncate(200) }}
+                </p>
+                <a href="{{ url_for('doc', idx=doc_id) }}" class="card-link">Перейти</a>
+            </div>
+        </div>
+    {% endfor %}
+    </div>
+{% endmacro %}
+
 {% block body %}
 <div class="row">
     <div class="col-6">
@@ -12,45 +28,14 @@
     <div class="col-6">
         <h2>Похожие документы</h2>
         <div class="row">
-            <div class="col">
-                <h3>LSI(k=300)</h3>
-            {% for doc_id, doc_text in lsi %}
-                <div class="card">
-                    <div class="card-body">
-                        <p class="card-text">
-                            {{ doc_text|truncate(200) }}
-                        </p>
-                        <a href="{{ url_for('doc', idx=doc_id) }}" class="card-link">Перейти</a>
-                    </div>
-                </div>
-            {% endfor %}
-            </div>
-            <div class="col">
-                        <h3>Doc2vec(k=300)</h3>
-            {% for doc_id, doc_text in d2v %}
-                <div class="card">
-                    <div class="card-body">
-                        <p class="card-text">
-                            {{ doc_text|truncate(200) }}
-                        </p>
-                        <a href="{{ url_for('doc', idx=doc_id) }}" class="card-link">Перейти</a>
-                    </div>
-                </div>
-            {% endfor %}
-            </div>
-            <div class="col">
-                        <h3>ARTM(k=300)</h3>
-            {% for doc_id, doc_text in artm %}
-                <div class="card">
-                    <div class="card-body">
-                        <p class="card-text">
-                            {{ doc_text|truncate(200) }}
-                        </p>
-                        <a href="{{ url_for('doc', idx=doc_id) }}" class="card-link">Перейти</a>
-                    </div>
-                </div>
-            {% endfor %}
-            </div>
+            {{ similar('LSI(k=300)', lsi) }}
+            {{ similar('Doc2vec(k=300)', d2v) }}
+
+            {{ similar('ARTM(k=300)', artm) }}
+            {{ similar('ARTM2(k=300)', artm2) }}
+
+            {{ similar('ARTM TF-IDF(k=300)', artm_tfidf) }}
+            {{ similar('ARTM2 TF-IDF(k=300)', artm2_tfidf) }}
         </div>
         </div>
     </div>
