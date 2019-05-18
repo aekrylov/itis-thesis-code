@@ -17,3 +17,5 @@ RESTFUL_JSON = {
     'ensure_ascii': False,
     'indent': 4
 }
+
+SQLALCHEMY_DATABASE_URI = os.environ['DATABASE_URL']

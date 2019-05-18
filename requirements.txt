@@ -1,5 +1,7 @@
 flask
 flask-restful
+Flask-SQLAlchemy
+psycopg2-binary
 pymystem3
 beautifulsoup4
 nltk

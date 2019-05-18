@@ -4,6 +4,7 @@ import tempfile
 
 from flask import Flask, render_template, request
 from flask_restful import Api, Resource
+from flask_sqlalchemy import SQLAlchemy
 from gensim.models import TfidfModel
 from tika import unpack
 
@@ -67,6 +68,10 @@ logging.basicConfig(format='%(asctime)s : %(levelname)s : %(message)s', level=lo
 app = Flask(__name__)
 app.config.from_object('recommenders.webapp_config')
 
+db = SQLAlchemy(app)
+
+from .db import *
+
 api = Api(app)
 api.add_resource(UploadResource, '/api/upload')
 api.add_resource(DocResource, '/api/doc/<int:doc_id>')
@@ -107,6 +112,16 @@ def similar_for_file():
 
     similar = get_similar(text, lambda sim: (sim, data_samples[sim]))
     return render_template('doc.html', doc=text, idx=-1, **similar)
+
+
+@app.route('/rate/<int:doc_id>/<int:rec_id>', methods=['POST'])
+def rate_recommendation(doc_id, rec_id):
+    score = int(request.values['score'])
+    ip = request.remote_addr
+
+    rating = Rating(doc_id=doc_id, recommendation_id=rec_id, value=score, ip=ip)
+    db.session.add(rating)
+    db.session.commit()
 
 
 if __name__ == '__main__':
