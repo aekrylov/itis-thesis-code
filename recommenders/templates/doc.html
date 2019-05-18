@@ -4,13 +4,21 @@
 {% macro similar(name, collection) %}
     <div class="col">
         <h3>{{ name }}</h3>
-    {% for doc_id, doc_text in collection %}
+    {% for doc_id, doc_text, meta in collection %}
         <div class="card">
             <div class="card-body">
+                <h5 class="card-title">
+                    <a href="{{ url_for('doc', idx=doc_id) }}" class="card-link">{{ meta['case_num'] }}</a>
+                </h5>
                 <p class="card-text">
                     {{ doc_text|truncate(200) }}
                 </p>
-                <a href="{{ url_for('doc', idx=doc_id) }}" class="card-link">Перейти</a>
+                <div>
+                    <button role="button" class="btn btn-success rate"
+                            data-doc-id="{{ idx }}" data-rec-id="{{ doc_id }}" data-score="1">ДА</button>
+                    <button role="button" class="btn btn-danger rate"
+                            data-doc-id="{{ idx }}" data-rec-id="{{ doc_id }}" data-score="-1">НЕТ</button>
+                </div>
             </div>
         </div>
     {% endfor %}
@@ -40,4 +48,12 @@
         </div>
     </div>
 </div>
+<script type="text/javascript">
+    $('.rate').click(function (e) {
+        const doc_id = $(this).data('doc-id');
+        const rec_id = $(this).data('rec-id');
+        const score = $(this).data('score');
+        $.post(`/rate/${doc_id}/${rec_id}`, {score})
+    })
+</script>
 {% endblock %}

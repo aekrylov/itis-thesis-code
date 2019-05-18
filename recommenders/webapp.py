@@ -97,8 +97,8 @@ def index():
 
 @app.route('/doc/<int:idx>')
 def doc(idx):
-    similar = get_similar(data_samples[idx], lambda sim: (sim, data_samples[sim]), True)
-    return render_template('doc.html', doc=data_samples[idx], case_num=metadata[idx]['case_num'], **similar)
+    similar = get_similar(data_samples[idx], lambda sim: (sim, data_samples[sim], metadata[sim]), True)
+    return render_template('doc.html', doc=data_samples[idx], idx=idx, case_num=metadata[idx]['case_num'], **similar)
 
 
 @app.route('/upload', methods=['POST'])
@@ -110,18 +110,23 @@ def similar_for_file():
     text = preprocess(unpack.from_file(tmp_file.name)['content'])
     tmp_file.close()
 
-    similar = get_similar(text, lambda sim: (sim, data_samples[sim]))
+    similar = get_similar(text, lambda sim: (sim, data_samples[sim], metadata[sim]))
     return render_template('doc.html', doc=text, idx=-1, **similar)
 
 
 @app.route('/rate/<int:doc_id>/<int:rec_id>', methods=['POST'])
 def rate_recommendation(doc_id, rec_id):
+    if doc_id == -1:
+        return "invalid doc"
+
     score = int(request.values['score'])
     ip = request.remote_addr
 
     rating = Rating(doc_id=doc_id, recommendation_id=rec_id, value=score, ip=ip)
     db.session.add(rating)
     db.session.commit()
+
+    return "ok"
 
 
 if __name__ == '__main__':

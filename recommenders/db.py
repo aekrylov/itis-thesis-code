@@ -16,10 +16,10 @@ class Rating(db.Model):
     id = db.Column(db.Integer, autoincrement=True, primary_key=True)
 
     doc_id = db.Column(db.Integer, db.ForeignKey('document.id'), nullable=False)
-    doc = db.relationship('Document', backref=db.backref('ratings'))
+    doc = db.relationship('Document', backref=db.backref('ratings'), foreign_keys=doc_id)
 
     recommendation_id = db.Column(db.Integer, db.ForeignKey('document.id'), nullable=False)
-    recommendation = db.relationship('Document')
+    recommendation = db.relationship('Document', foreign_keys=recommendation_id)
 
     value = db.Column(db.SmallInteger, nullable=False)
     ip = db.Column(db.String(length=15), nullable=False)
