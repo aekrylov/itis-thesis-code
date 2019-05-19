@@ -28,11 +28,6 @@ class Rating(db.Model):
 
 
 @app.cli.command()
-def init_db():
-    db.create_all()
-
-
-@app.cli.command()
 def fill_db(metadata=None, data_samples=None):
     if metadata is None:
         from .webapp import metadata
