@@ -45,7 +45,6 @@
             {{ similar('ARTM TF-IDF(k=300)', artm_tfidf) }}
             {{ similar('ARTM2 TF-IDF(k=300)', artm2_tfidf) }}
         </div>
-        </div>
     </div>
 </div>
 <script type="text/javascript">
@@ -53,7 +52,9 @@
         const doc_id = $(this).data('doc-id');
         const rec_id = $(this).data('rec-id');
         const score = $(this).data('score');
+        $(this).attr('disabled', 'true');
         $.post(`/rate/${doc_id}/${rec_id}`, {score})
+            .always(() => $(this).removeAttr('disabled'));
     })
 </script>
 {% endblock %}

@@ -24,6 +24,8 @@ class Rating(db.Model):
     value = db.Column(db.SmallInteger, nullable=False)
     ip = db.Column(db.String(length=15), nullable=False)
 
+    __table_args__ = (db.UniqueConstraint('doc_id', 'recommendation_id'), )
+
 
 @app.cli.command()
 def init_db():
