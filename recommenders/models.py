@@ -1,4 +1,5 @@
 import logging
+import pickle
 from collections import defaultdict
 from time import time
 
@@ -42,6 +43,15 @@ class ModelBase:
 
     def get_similar(self, doc, topn=10):
         raise NotImplementedError()
+
+    def save(self, path):
+        with open(path, 'wb') as f:
+            pickle.dump(self, f)
+
+    @staticmethod
+    def load(path, **kwargs):
+        with open(path, 'rb') as f:
+            return pickle.load(f)
 
 
 class SimilarityIndex(ModelBase):
@@ -97,21 +107,9 @@ class BigArtmModel(ModelBase):
         bv = artm.BatchVectorizer(data_format='bow_uci', data_path=uci_dir, collection_name='corpus',
                                   target_folder=uci_dir + '/artm_batches')
         bv_dict = bv.dictionary
-        topic_names = [str(i) for i in range(n_topics)]
 
         logging.info("Fitting the ARTM model")
-        model = artm.ARTM(topic_names=topic_names, dictionary=bv_dict, cache_theta=True,
-                          scores=[
-                                   artm.PerplexityScore(name='PerplexityScore', dictionary=bv_dict),
-                                   artm.SparsityPhiScore(name='SparsityPhiScore'),
-                                   artm.SparsityThetaScore(name='SparsityThetaScore'),
-                                   artm.TopicKernelScore(name='TopicKernelScore', probability_mass_threshold=0.3)
-                          ],
-                          regularizers=[
-                                   artm.SmoothSparseThetaRegularizer(name='SparseTheta', tau=-0.15),
-                                   artm.SmoothSparsePhiRegularizer(name='SparsePhi', tau=-0.1),
-                                   artm.DecorrelatorPhiRegularizer(name='DecorrelatorPhi', tau=1)
-                          ])
+        model = artm.ARTM(dictionary=bv_dict, num_topics=n_topics)
 
         model.fit_offline(batch_vectorizer=bv, num_collection_passes=10)
 
@@ -124,13 +122,34 @@ class BigArtmModel(ModelBase):
             self.phi[idx, :] = vec
 
         logging.info("Building the index for ARTM")
-        corpus = model.get_theta().T.sort_index()
+        corpus = model.transform(bv).T.sort_index()
         corpus = [matutils.full2sparse(row) for index, row in corpus.iterrows()]
         self.index = similarities.MatrixSimilarity(corpus, num_features=n_topics, num_best=self.N_BEST)
 
+        self.model = model
+        self.dictionary = dictionary
+
+    def save(self, path):
+        super().save(path)
+        self.model.save(path+'.artm')
+
+    @staticmethod
+    def load(path, **kwargs):
+        with open(path, 'rb') as f:
+            obj = pickle.load(f)
+            obj.model = artm.ARTM(num_topics=10)
+            obj.model.load(path+'.artm')
+            return obj
+
+    def __getstate__(self):
+        d = self.__dict__.copy()
+        del d['model']
+        return d
+
     def get_similar(self, doc, topn=10):
-        vec = np.matmul(matutils.sparse2full(doc, self.phi.shape[0]), self.phi)
-        sims = self.index[matutils.full2sparse(vec)]
+        m = np.asarray([matutils.sparse2full(doc, len(self.dictionary))])
+        bv = artm.BatchVectorizer(data_format='bow_n_wd', n_wd=m.T, vocabulary=self.dictionary)
+        sims = self.index[matutils.full2sparse(self.model.transform(bv))]
         return [t[0] for t in sims[:topn]]
 
 

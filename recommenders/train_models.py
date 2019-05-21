@@ -29,13 +29,13 @@ if __name__ == '__main__':
         corpus = [tfidf[doc] for doc in corpus]
 
     if lsi_on:
-        save(LsiModel(corpus, dictionary, conf.N_TOPICS), conf.LSI_PICKLE)
+        LsiModel(corpus, dictionary, conf.N_TOPICS).save(conf.LSI_PICKLE)
 
     if lda_on:
-        save(LdaModel(corpus, dictionary, conf.N_TOPICS), conf.LDA_PICKLE)
+        LdaModel(corpus, dictionary, conf.N_TOPICS).save(conf.LDA_PICKLE)
 
     if d2v_on:
-        save(Doc2vecModel(data_samples, conf.N_TOPICS), conf.D2V_PICKLE)
+        Doc2vecModel(data_samples, conf.N_TOPICS).save(conf.D2V_PICKLE)
 
     if artm_on:
-        save(BigArtmModel(conf.UCI_FOLDER, dictionary, conf.N_TOPICS), conf.ARTM_PICKLE)
+        BigArtmModel(conf.UCI_FOLDER, dictionary, conf.N_TOPICS).save(conf.ARTM_PICKLE)

@@ -9,7 +9,8 @@ from flask_sqlalchemy import SQLAlchemy
 from gensim.models import TfidfModel
 from tika import unpack
 
-from recommenders.util import load_uci, tokenize, load, kad_pdf_path
+from recommenders.models import LsiModel, LdaModel, BigArtmModel, Doc2vecModel
+from recommenders.util import load_uci, tokenize, kad_pdf_path
 from text_processing.base import preprocess
 
 
@@ -83,11 +84,11 @@ tfidf = TfidfModel(dictionary=dictionary, smartirs='ntc')
 del corpus
 
 logging.info('Unpickling models')
-lsi = load(app.config['LSI_PICKLE'])
-lda = load(app.config['LDA_PICKLE'])
-artm = load(app.config['ARTM_PICKLE'])
-artm2 = load(app.config['ARTM2_PICKLE'])
-d2v = load(app.config['D2V_PICKLE'])
+lsi = LsiModel.load(app.config['LSI_PICKLE'])
+lda = LdaModel.load(app.config['LDA_PICKLE'])
+artm = BigArtmModel.load(app.config['ARTM_PICKLE'])
+artm2 = artm
+d2v = Doc2vecModel.load(app.config['D2V_PICKLE'])
 logging.info('Unpickling finished')
 
 
