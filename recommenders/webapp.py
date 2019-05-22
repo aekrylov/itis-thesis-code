@@ -34,8 +34,6 @@ def get_similar(data_sample, idx_to_doc=lambda x: x, cut_first=False):
         'd2v': [idx_to_doc(sim) for sim in d2v.get_similar(data_sample)[start_idx:]],
         'artm': [idx_to_doc(sim) for sim in artm.get_similar(bow)[start_idx:]],
         'artm_tfidf': [idx_to_doc(sim) for sim in artm.get_similar(vec_tfidf)[start_idx:]],
-        'artm2': [idx_to_doc(sim) for sim in artm2.get_similar(bow)[start_idx:]],
-        'artm2_tfidf': [idx_to_doc(sim) for sim in artm2.get_similar(vec_tfidf)[start_idx:]],
     }
 
 
@@ -87,7 +85,6 @@ logging.info('Unpickling models')
 lsi = LsiModel.load(app.config['LSI_PICKLE'])
 lda = LdaModel.load(app.config['LDA_PICKLE'])
 artm = BigArtmModel.load(app.config['ARTM_PICKLE'])
-artm2 = artm
 d2v = Doc2vecModel.load(app.config['D2V_PICKLE'])
 logging.info('Unpickling finished')
 

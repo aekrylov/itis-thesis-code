@@ -81,11 +81,10 @@ if __name__ == '__main__':
     if trained:
         import recommenders.webapp as webapp
 
-        for k in ['lsi', 'lda', 'artm', 'artm2']:
+        for k in ['lsi', 'lda', 'artm']:
             scores['t'+k] = evaluator.evaluate(getattr(webapp, k), corpus)
         scores['t_d2v'] = evaluator.evaluate(webapp.d2v, data_samples)
         scores['t_artm_raw'] = evaluator.evaluate(webapp.artm, corpus_raw)
-        scores['t_artm2_raw'] = evaluator.evaluate(webapp.artm2, corpus_raw)
 
         with open('./scores_trained.json', 'w') as f:
             json.dump(scores, f)
