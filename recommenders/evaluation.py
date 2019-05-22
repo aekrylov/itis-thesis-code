@@ -89,13 +89,14 @@ if __name__ == '__main__':
         with open('./scores_trained.json', 'w') as f:
             json.dump(scores, f)
 
-    for t in range(50, 800, 50):
+    t_values = [2**i for i in range(2, 8)] + list(range(100, 850, 50))
+    for t in t_values:
         if lsi_on:
             scores['lsi'][t] = evaluator.evaluate(LsiModel(corpus, dictionary, t), corpus)
         if lda_on:
             scores['lda'][t] = evaluator.evaluate(LdaModel(corpus, dictionary, t), corpus)
         if d2v_on:
-            scores['d2v'][t] = evaluator.evaluate(Doc2vecModel(data_samples, t), corpus)
+            scores['d2v'][t] = evaluator.evaluate(Doc2vecModel(data_samples, t), data_samples)
         if artm_on:
             scores['artm'][t] = evaluator.evaluate(BigArtmModel(conf.UCI_FOLDER, dictionary, t), corpus)
 

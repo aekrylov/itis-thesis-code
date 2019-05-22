@@ -1,4 +1,5 @@
 import logging
+import os
 import pickle
 from collections import defaultdict
 from time import time
@@ -158,8 +159,8 @@ class Doc2vecModel(ModelBase):
     NB: works with the raw corpus
     """
     def __init__(self, data_samples, n_topics, window=10):
-        doc2vec_corpus = [TaggedDocument(Tokenizer.tokenize(sample), [i]) for i, sample in enumerate(data_samples)]
-        self.model = Doc2Vec(doc2vec_corpus, vector_size=n_topics, window=window, min_count=10, workers=4)
+        docs = [TaggedDocument(Tokenizer.tokenize(sample), [i]) for i, sample in enumerate(data_samples)]
+        self.model = Doc2Vec(docs, vector_size=n_topics, window=window, min_count=10, workers=os.cpu_count())
         self.model.delete_temporary_training_data()
 
     def get_similar(self, doc, topn=10):
