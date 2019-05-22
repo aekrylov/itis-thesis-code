@@ -2,6 +2,7 @@ import json
 import sys
 from collections import defaultdict
 
+import math
 import numpy as np
 from gensim.models import TfidfModel
 
@@ -29,11 +30,17 @@ class Evaluator:
     def evaluate(self, model, corpus):
         return {
             'map': self.map_score(model, corpus),
-            'map_known': self.map_score_known(model, corpus)
+            'map_known': self.map_score_known(model, corpus),
+            'mean_p_at_k': self.mean_precision_at_k(model, corpus),
+            'mean_p_at_k_known': self.mean_precision_at_k(model, corpus, True),
+            'mean_dcg': self.mean_dcg(model, corpus),
+            'mean_dcg_known': self.mean_dcg(model, corpus, True),
         }
 
     @staticmethod
-    def precision(recs: [int], test_scores):
+    def precision(recs: [int], test_scores, remove_unknown=False):
+        if remove_unknown:
+            recs = [rec for rec in recs if test_scores[rec] != 0]
         return np.average([test_scores[rec] > 0 for rec in recs])
 
     @staticmethod
@@ -47,6 +54,19 @@ class Evaluator:
         rel = [test_scores[recs[k-1]] > 0 for k in k_values]
         return np.multiply(precisions, rel).mean()
 
+    @staticmethod
+    def dcg(recs: [int], test_scores, remove_unknown=False):
+        if remove_unknown:
+            recs = [rec for rec in recs if test_scores[rec] != 0]
+        return sum([(test_scores[rec] > 0) / math.log2(i+2) for i,rec in enumerate(recs)])
+
+    def mean_precision_at_k(self, model, corpus, remove_unknown=False):
+        a = np.asarray([
+            self.precision(model.get_similar(corpus[k], self.top_n), v, remove_unknown)
+            for k, v in self.test_data.items()
+        ])
+        return a[a == a].mean()  # filter out nan values
+
     def map_score(self, model, corpus):
         """Mean Average Precision score"""
         return np.average([
@@ -55,9 +75,18 @@ class Evaluator:
 
     def map_score_known(self, model, corpus):
         """mAP score only for known items"""
-        return np.average([
-            self.average_precision_score(model.get_similar(corpus[k], self.top_n), v, True) for k, v in self.test_data.items()
+        ap_scores = np.asarray([
+            self.average_precision_score(model.get_similar(corpus[k], self.top_n), v, True)
+            for k, v in self.test_data.items()
         ])
+        return ap_scores[ap_scores == ap_scores].mean()  # filter out nan values
+
+    def mean_dcg(self, model, corpus, remove_unknown=False):
+        a = np.asarray([
+            self.dcg(model.get_similar(corpus[k], self.top_n), v, remove_unknown)
+            for k, v in self.test_data.items()
+        ])
+        return a[a == a].mean()  # filter out nan values
 
 
 if __name__ == '__main__':
